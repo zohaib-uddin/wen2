@@ -3,7 +3,7 @@ import { useShop } from "../context/ShopContext";
 import { AuthInput } from "../components/shared/AuthInput";
 import { ShieldAlert, Loader2, CheckCircle2 } from "lucide-react";
 import { useSignUp } from "@clerk/clerk-react";
-import img1 from "../assets/images/caraousel2.jpg"
+import img1 from "../assets/images/wen 18.png"
 
 export const SignUpPage: React.FC = () => {
   const { navigate, triggerToast, user, authLoading, profile } = useShop();
@@ -20,7 +20,7 @@ export const SignUpPage: React.FC = () => {
         localStorage.removeItem("redirectAfterLogin");
         navigate(redirectPath as any);
       } else {
-        navigate('shop');
+        navigate('account');
       }
     }
   }, [user, authLoading, profile]);
@@ -57,12 +57,47 @@ export const SignUpPage: React.FC = () => {
       sessionStorage.setItem("wen_signup_fullname", fullName);
 
       // 1. Create signup session on Clerk
-      await signUp.create({
+      const signUpAttempt = await signUp.create({
         emailAddress: email,
         password: password,
         firstName,
         lastName,
       });
+
+      if (signUpAttempt.status === "complete") {
+        await setActive({ session: signUpAttempt.createdSessionId });
+        
+        const fullName = sessionStorage.getItem("wen_signup_fullname") || `${firstName} ${lastName}`;
+        const storedPhone = sessionStorage.getItem("wen_signup_phone") || phone || "N/A";
+
+        try {
+          await fetch("/api/sync-profile", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              clerk_id: signUpAttempt.createdUserId,
+              email: email,
+              full_name: fullName,
+              phone: storedPhone,
+              avatar_url: ""
+            }),
+          });
+        } catch (syncErr) {
+          console.warn("Could not sync profile during signup:", syncErr);
+        }
+
+        triggerToast("Exclusive private membership initiated successfully!");
+        const redirectPath = localStorage.getItem("redirectAfterLogin");
+        if (redirectPath) {
+          localStorage.removeItem("redirectAfterLogin");
+          navigate(redirectPath as any);
+        } else {
+          navigate('account');
+        }
+        return;
+      }
 
       // 2. Prepare email verification code
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
@@ -120,7 +155,7 @@ export const SignUpPage: React.FC = () => {
           localStorage.removeItem("redirectAfterLogin");
           navigate(redirectPath as any);
         } else {
-          navigate('shop');
+          navigate('account');
         }
       } else {
         setErrorMsg("Email verification status not complete. Please check the code.");
