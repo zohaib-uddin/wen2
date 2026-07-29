@@ -1,10 +1,10 @@
 import React, { useState, useRef } from "react";
 import { motion } from "motion/react";
-import vid1 from "../../assets/images/wen vid6.mp4";
-import vid2 from "../../assets/images/wen vid6.mp4";
-import vid3 from "../../assets/images/wen vid6.mp4";
-import vid4 from "../../assets/images/wen vid6.mp4";
-import vid5 from "../../assets/images/wen vid6.mp4";
+import vid1 from "../../assets/images/wen vid1.mp4";
+import vid2 from "../../assets/images/wen vid2.mp4";
+import vid3 from "../../assets/images/wen vid3.mp4";
+import vid4 from "../../assets/images/wen vid4.mp4";
+import vid5 from "../../assets/images/wen vid5.mp4";
 import vid6 from "../../assets/images/wen vid6.mp4";
 
 import { Play, Volume2, VolumeX, ArrowLeft, ArrowRight } 
