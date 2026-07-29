@@ -107,12 +107,20 @@ const mapDbProductToFrontend = (dbProd: any, categoryName: string): Product => {
   const dbConcern = dbProd.concern || "";
   const finalConcern = dbConcern;
 
+  const hasVariants = dbProd.product_variants && dbProd.product_variants.length > 0;
+  const firstVariant = hasVariants ? dbProd.product_variants[0] : null;
+
   return {
     id: dbProd.id,
     name: dbProd.name,
     category: (categoryName || "Hair Oil") as any,
-    price: Number(dbProd.price) || 2500,
-    originalPrice: dbProd.compare_price ? Number(dbProd.compare_price) : undefined,
+    price: hasVariants ? Number(firstVariant.price) : (Number(dbProd.price) || 2500),
+    originalPrice: hasVariants 
+      ? (firstVariant.compare_price ? Number(firstVariant.compare_price) : undefined)
+      : (dbProd.compare_price ? Number(dbProd.compare_price) : undefined),
+    actual_price: hasVariants
+      ? (firstVariant.actual_price ? Number(firstVariant.actual_price) : undefined)
+      : (dbProd.actual_price ? Number(dbProd.actual_price) : undefined),
     rating: Number(dbProd.rating) || 5.0,
     reviewCount: Number(dbProd.reviews_count) || 0,
     image: dbProd.images?.[0] || "https://images.unsplash.com/photo-1608248597481-496100c8c836?q=80&w=600&auto=format&fit=crop",
@@ -127,12 +135,31 @@ const mapDbProductToFrontend = (dbProd: any, categoryName: string): Product => {
     howToUse: dbProd.how_to_use || "",
     ingredients: Array.isArray(dbProd.ingredients) ? dbProd.ingredients.join(", ") : (dbProd.ingredients || ""),
     concern: finalConcern as any,
-    variants: dbProd.size ? [dbProd.size] : ["100ml"],
-    selectedVariant: dbProd.size || "100ml",
+    variants: hasVariants 
+      ? dbProd.product_variants.map((v: any) => ({
+          id: v.id || `var-${Date.now()}-${Math.random()}`,
+          size: v.size,
+          price: Number(v.price),
+          compare_price: v.compare_price ? Number(v.compare_price) : undefined,
+          actual_price: v.actual_price ? Number(v.actual_price) : undefined,
+          stock_quantity: Number(v.stock_quantity) || 0
+        }))
+      : [{
+          id: `var-${Date.now()}-${Math.random()}`,
+          size: dbProd.size || "100ml",
+          price: Number(dbProd.price) || 2500,
+          compare_price: dbProd.compare_price ? Number(dbProd.compare_price) : undefined,
+          actual_price: dbProd.actual_price ? Number(dbProd.actual_price) : undefined,
+          stock_quantity: dbProd.stock_quantity || 0
+        }],
+    selectedVariant: hasVariants 
+      ? firstVariant.size 
+      : (dbProd.size || "100ml"),
+    has_variants: hasVariants,
     isBestSeller: dbProd.is_bestseller || false,
     isNewArrival: dbProd.is_featured || false,
-    stock_quantity: dbProd.stock_quantity || 0,
-    size: dbProd.size || "100ml",
+    stock_quantity: hasVariants ? (firstVariant.stock_quantity || 0) : (dbProd.stock_quantity || 0),
+    size: hasVariants ? firstVariant.size : (dbProd.size || "100ml"),
     gallery_images: dbProd.gallery_images || (dbProd.images && dbProd.images.length > 1 ? dbProd.images.slice(1) : []),
     reviews_count: Number(dbProd.reviews_count) || 0,
     reviewsList: []
@@ -605,7 +632,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         // 2. Fetch products
-        const { data: prodData, error: prodErr } = await supabase.from("products").select("*, categories(id, name, slug)");
+        const { data: prodData, error: prodErr } = await supabase.from("products").select("*, categories(id, name, slug), product_variants(*)").order("created_at", { ascending: true });
         if (!prodErr && prodData) {
           const mapped = prodData.map((dp: any) => mapDbProductToFrontend(dp, dp.categories?.name));
           setProducts(mapped);

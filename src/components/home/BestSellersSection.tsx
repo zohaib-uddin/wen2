@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useMemo } from "react";
 import { useShop } from "../../context/ShopContext";
 import { motion } from "motion/react";
 import { ProductCard } from "../shop/ProductCard";
@@ -10,8 +10,26 @@ export const BestSellersSection: React.FC = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { isAtStart, isAtEnd } = useScrollArrows(scrollContainerRef);
 
-  // Select products marked as best sellers
-  const bestSellers = products.filter((p) => p.isBestSeller).slice(0, 8); // Show 8 products (2 rows)
+  // Sort ALL products by creation date (Oldest first)
+  // Removed .slice(0, 8) limit to show ALL products as requested
+  const displayProducts = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    
+    // Check if any product actually has a date field to avoid NaN sorting issues
+    const hasDateField = products.some((p: any) => p.created_at || p.createdAt || p.date);
+    
+    if (hasDateField) {
+      return [...products].sort((a: any, b: any) => {
+        const dateA = new Date(a.created_at || a.createdAt || a.date || 0).getTime();
+        const dateB = new Date(b.created_at || b.createdAt || b.date || 0).getTime();
+        return dateA - dateB; // Ascending order: Oldest creation date comes first
+      });
+    }
+    
+    // Fallback: If no date fields exist, trust the original DB order 
+    // (which ShopPage.tsx confirms is already oldest first)
+    return products;
+  }, [products]);
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -35,7 +53,7 @@ export const BestSellersSection: React.FC = () => {
     );
   }
 
-  if (!products || products.length === 0) {
+  if (!displayProducts || displayProducts.length === 0) {
     return (
       <section className="py-[40px] md:py-[80px] lg:py-[120px] bg-white flex items-center justify-center">
         <div className="text-center">
@@ -88,7 +106,7 @@ export const BestSellersSection: React.FC = () => {
             className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar pb-4 gap-[16px] md:gap-[24px] px-[16px] md:px-0 -mx-[16px] md:mx-0 scroll-smooth"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {bestSellers.map((product, idx) => (
+            {displayProducts.map((product, idx) => (
               <motion.div
                 key={product.id}
                 initial={{ opacity: 0, y: 30 }}

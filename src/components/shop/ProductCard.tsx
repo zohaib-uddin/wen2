@@ -29,18 +29,26 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const [isAdding, setIsAdding] = React.useState(false);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
   
-  const parsedVariants = product.variants 
-    ? product.variants.flatMap(v => v.split(',')).map(v => v.trim()).filter(Boolean)
-    : [];
-  const [selectedSize, setSelectedSize] = useState(parsedVariants[0] || "");
+  const parsedVariants = product.variants && product.variants.length > 0
+    ? product.variants.map((v: any) => typeof v === 'string' ? v : v.size).filter(Boolean)
+    : [product.size || "100ml"];
+  const [selectedSize, setSelectedSize] = useState(parsedVariants[0] || "100ml");
+
+  const currentVariant = product.variants?.find((v: any) => (typeof v === 'string' ? v : v.size) === selectedSize) || (product.variants?.[0] && typeof product.variants[0] !== 'string' ? product.variants[0] : null) || null;
+
+  const getDynamicPrice = () => currentVariant ? currentVariant.price : product.price;
+  const getDynamicOriginalPrice = () => currentVariant ? currentVariant.compare_price : product.originalPrice;
+
+  const currentPrice = getDynamicPrice();
+  const originalPrice = getDynamicOriginalPrice();
 
   const isFavorited = isInWishlist(product.id);
   const images = [product.image, ...(product.gallery_images || [])].filter(Boolean);
   
   const primaryImage = images[currentImageIdx] || product.image;
 
-  const actualDiscountPercent = product.originalPrice 
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  const actualDiscountPercent = originalPrice 
+    ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
     : 0;
 
   const nextImage = (e: React.MouseEvent) => {
@@ -57,15 +65,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-  const isOutOfStock = product.stock_quantity !== undefined ? product.stock_quantity <= 0 : false; 
-  const isLowStock = product.stock_quantity !== undefined && product.stock_quantity > 0 && product.stock_quantity <= 5;
+  const isOutOfStock = currentVariant 
+    ? currentVariant.stock_quantity <= 0 
+    : (product.stock_quantity !== undefined ? product.stock_quantity <= 0 : false); 
+  const isLowStock = currentVariant 
+    ? currentVariant.stock_quantity > 0 && currentVariant.stock_quantity <= 5
+    : (product.stock_quantity !== undefined && product.stock_quantity > 0 && product.stock_quantity <= 5);
 
   const handleQuickAdd = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isOutOfStock || isAdding) return;
     setIsAdding(true);
     await new Promise((resolve) => setTimeout(resolve, 600));
-    addToCart(product, 1, selectedSize || getSmallestVariant(product.variants, product.size));
+    const productClone = {
+      ...product,
+      price: currentPrice,
+    };
+    addToCart(productClone, 1, selectedSize);
     setIsAdding(false);
   };
 
@@ -111,7 +127,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               <Badge className="bg-[#ef4444] text-white">-{actualDiscountPercent}%</Badge>
             )}
             {isLowStock && (
-              <Badge className="bg-[#f97316] text-white">Only {product.stock_quantity} Left</Badge>
+              <Badge className="bg-[#f97316] text-white">Only {currentVariant ? currentVariant.stock_quantity : product.stock_quantity} Left</Badge>
             )}
             {showBestSellerBadge && (
               <Badge className="bg-white/70 backdrop-blur-sm text-[#254936]">Best Seller</Badge>
@@ -155,11 +171,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <div className="space-y-[4px]">
               <div className="flex items-baseline gap-[8px]">
                 <span className="text-[20px] font-bold text-[#254936]">
-                  Rs. {(product.price || 0).toLocaleString()}
+                  Rs. {(currentPrice || 0).toLocaleString()}
                 </span>
-                {product.originalPrice && (
+                {originalPrice && (
                   <span className="text-[13px] text-[#63786A] line-through">
-                    Rs. {(product.originalPrice || 0).toLocaleString()}
+                    Rs. {(originalPrice || 0).toLocaleString()}
                   </span>
                 )}
               </div>
@@ -267,7 +283,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <Badge className="bg-[#ef4444] text-white">-{actualDiscountPercent}%</Badge>
           )}
           {isLowStock && (
-            <Badge className="bg-[#f97316] text-white">Only {product.stock_quantity} Left</Badge>
+            <Badge className="bg-[#f97316] text-white">Only {currentVariant ? currentVariant.stock_quantity : product.stock_quantity} Left</Badge>
           )}
           {showBestSellerBadge && (
             <Badge className="bg-white/70 backdrop-blur-sm text-[#254936]">Best Seller</Badge>
@@ -320,11 +336,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         <div className="flex items-baseline gap-[6px] md:gap-[8px] mb-[12px] md:mb-[16px]">
           <span className="text-[13px] md:text-[15px] font-bold text-[#254936]">
-            Rs. {(product.price || 0).toLocaleString()}
+            Rs. {(currentPrice || 0).toLocaleString()}
           </span>
-          {product.originalPrice && (
+          {originalPrice && (
             <span className="text-[9px] md:text-[10px] text-[#63786A] line-through">
-              Rs. {(product.originalPrice || 0).toLocaleString()}
+              Rs. {(originalPrice || 0).toLocaleString()}
             </span>
           )}
         </div>

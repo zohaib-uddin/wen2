@@ -53,24 +53,25 @@ export const ProductDetailPage: React.FC = () => {
 
   // Helper to parse sizes
   const parseSizes = () => {
-    const sizeStr = selectedProduct.size || selectedProduct.variants?.[0] || selectedProduct.size || "";
-    if (typeof sizeStr === "string") {
-      return sizeStr.split(",").map(s => s.trim()).filter(Boolean);
+    if (selectedProduct.variants && selectedProduct.variants.length > 0) {
+      return selectedProduct.variants.map((v: any) => typeof v === 'string' ? v : v.size).filter(Boolean);
     }
-    if (Array.isArray(sizeStr)) {
-      return sizeStr;
-    }
-    return [sizeStr];
+    return [selectedProduct.size || "100ml"];
   };
 
-  const isOutOfStock = selectedProduct.stock_quantity !== undefined ? selectedProduct.stock_quantity <= 0 : false;
+  const currentVariant = selectedProduct.variants?.find((v: any) => (typeof v === 'string' ? v : v.size) === selectedVariant) || (selectedProduct.variants?.[0] && typeof selectedProduct.variants[0] !== 'string' ? selectedProduct.variants[0] : null) || null;
+
+  const isOutOfStock = currentVariant 
+    ? currentVariant.stock_quantity <= 0 
+    : (selectedProduct.stock_quantity !== undefined ? selectedProduct.stock_quantity <= 0 : false);
 
   // Initialize selected size variant
   useEffect(() => {
     const sizes = parseSizes();
     setProductSizes(sizes);
     if (sizes.length > 0) {
-      setSelectedVariant(getSmallestVariant(sizes));
+      // Pick the smallest or the first
+      setSelectedVariant(sizes[0]);
     }
     setQuantity(1);
     setActiveThumb(0);
@@ -82,10 +83,16 @@ export const ProductDetailPage: React.FC = () => {
 
   // Dynamic pricing based on selected variant size
   const getDynamicPrice = () => {
+    if (currentVariant) {
+      return currentVariant.price;
+    }
     return selectedProduct.price;
   };
 
   const getDynamicOriginalPrice = () => {
+    if (currentVariant) {
+      return currentVariant.compare_price || null;
+    }
     return selectedProduct.originalPrice || null;
   };
 
@@ -384,9 +391,9 @@ export const ProductDetailPage: React.FC = () => {
                 </div>
                 
                 <div className="flex items-center gap-[8px]">
-                  <div className={`w-[8px] h-[8px] rounded-full ${(selectedProduct.stock_quantity ?? 0) > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
-                  <span className={`text-[12px] font-bold uppercase tracking-[1px] ${(selectedProduct.stock_quantity ?? 0) > 0 ? 'text-green-700' : 'text-red-600'}`}>
-                    {(selectedProduct.stock_quantity ?? 0) > 0 ? 'In Stock' : 'Out of Stock'}
+                  <div className={`w-[8px] h-[8px] rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-green-500'}`} />
+                  <span className={`text-[12px] font-bold uppercase tracking-[1px] ${isOutOfStock ? 'text-red-600' : 'text-green-700'}`}>
+                    {isOutOfStock ? 'Out of Stock' : 'In Stock'}
                   </span>
                 </div>
               </div>

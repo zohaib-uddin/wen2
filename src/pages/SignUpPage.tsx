@@ -3,7 +3,7 @@ import { useShop } from "../context/ShopContext";
 import { AuthInput } from "../components/shared/AuthInput";
 import { ShieldAlert, Loader2, CheckCircle2 } from "lucide-react";
 import { useSignUp } from "@clerk/clerk-react";
-import img1 from "../../src/assets/images/wen 25.png"
+import img1 from "../assets/images/caraousel2.jpg"
 
 export const SignUpPage: React.FC = () => {
   const { navigate, triggerToast, user, authLoading, profile } = useShop();

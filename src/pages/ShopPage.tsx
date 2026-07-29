@@ -145,10 +145,11 @@ export const ShopPage: React.FC = () => {
     if (activeSortOption === "rating") {
       return (Number(b.rating) || 0) - (Number(a.rating) || 0);
     }
-    if (activeSortOption === "newest") {
-      return (Number(b.reviewCount) || 0) - (Number(a.reviewCount) || 0); // Recommended approximation
+    if (activeSortOption === "best-sellers") {
+      return (Number(b.reviewCount) || 0) - (Number(a.reviewCount) || 0);
     }
-    return (Number(b.reviewCount) || 0) - (Number(a.reviewCount) || 0); // best sellers
+    // Default to oldest first (preserve original DB order)
+    return 0;
   });
 
   const handleClearFilters = () => {
@@ -194,7 +195,7 @@ export const ShopPage: React.FC = () => {
               LABORATORY FORMULATION CATALOGUE
             </span>
             <h1 className="font-playfair text-2xl sm:text-4xl lg:text-5xl font-bold text-[#254936] leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
-              Shop All Secret Formulations
+              Shop All Formulations
             </h1>
             <p className="text-xs sm:text-sm text-[#63786A] font-light leading-relaxed">
               Meticulously engineered utilizing organic Kashmiri saffron, active skin acids, and raw organic cold-pressed floral infusions. Formatted beautifully to combat the local climate indexes of Pakistan.

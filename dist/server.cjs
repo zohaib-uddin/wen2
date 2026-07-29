@@ -463,7 +463,7 @@ async function safeProfileUpdate(supabaseAdmin, payload, matchColumn, matchValue
 }
 async function startServer() {
   const app = (0, import_express.default)();
-  const PORT = process.env.PORT || 3e3;
+  const PORT = 3e3;
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
   });

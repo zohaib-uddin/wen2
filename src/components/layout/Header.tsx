@@ -365,7 +365,7 @@ export const Header: React.FC = () => {
                         {/* Categories Column */}
                         <div className="flex flex-col">
                           <h4 className="font-playfair font-bold text-[#254936] text-[22px] mb-[16px]">Shop By Category</h4>
-                          <img src={img1} alt="Categories" className="w-[200px] h-[150px] object-cover rounded-lg mb-[16px]" referrerPolicy="no-referrer" />
+                          <img src={img1} alt="Categories" className="w-[200px] h-[200px] object-cover rounded-lg mb-[16px]" referrerPolicy="no-referrer" />
                           <ul className="flex flex-col text-left">
                             {(navCategories.length > 0 ? navCategories : [{id: 1, name: 'Hair Care'}, {id: 2, name: 'Skin Care'}, {id: 3, name: 'Body Care'}]).map((cat) => (
                                 <li key={cat.id} className="border-b border-[#f5f5f5] last:border-0">
@@ -379,7 +379,7 @@ export const Header: React.FC = () => {
                         {/* Concerns Column */}
                         <div className="flex flex-col">
                           <h4 className="font-playfair font-bold text-[#254936] text-[22px] mb-[16px]">Shop By Concern</h4>
-                          <img src={img2} alt="Concerns" className="w-[200px] h-[150px] object-cover rounded-lg mb-[16px]" referrerPolicy="no-referrer" />
+                          <img src={img2} alt="Concerns" className="w-[200px] h-[200px] object-cover rounded-lg mb-[16px]" referrerPolicy="no-referrer" />
                           <ul className="flex flex-col text-left h-[250px] overflow-y-auto pr-2 custom-scrollbar">
                              {(navTargets.length > 0 ? navTargets : [{id: 1, name: 'Hair Fall'}, {id: 2, name: 'Acne & Blemishes'}]).map((target) => (
                                 <li key={target.id} className="border-b border-[#f5f5f5] last:border-0">

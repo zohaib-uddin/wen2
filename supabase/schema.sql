@@ -61,11 +61,12 @@ CREATE TABLE IF NOT EXISTS public.products (
   slug TEXT UNIQUE NOT NULL,
   description TEXT,
   short_description TEXT,
-  price DECIMAL(10,2) NOT NULL,
+  price DECIMAL(10,2),
   compare_price DECIMAL(10,2),
+  actual_price DECIMAL(10,2),
   category_id UUID REFERENCES public.categories ON DELETE SET NULL,
   images TEXT[] DEFAULT '{}'::TEXT[] NOT NULL,
-  stock_quantity INTEGER DEFAULT 0 NOT NULL,
+  stock_quantity INTEGER DEFAULT 0,
   is_bestseller BOOLEAN DEFAULT false NOT NULL,
   is_featured BOOLEAN DEFAULT false NOT NULL,
   rating DECIMAL(2,1) DEFAULT 0.0 CHECK (rating >= 0.0 AND rating <= 5.0) NOT NULL,
@@ -74,10 +75,27 @@ CREATE TABLE IF NOT EXISTS public.products (
   how_to_use TEXT,
   benefits TEXT[] DEFAULT '{}'::TEXT[] NOT NULL,
   is_active BOOLEAN DEFAULT true NOT NULL,
+  has_variants BOOLEAN DEFAULT false NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   
   CONSTRAINT check_positive_price CHECK (price >= 0.0)
+);
+
+-- 3.5 product_variants holding multi-size options
+CREATE TABLE IF NOT EXISTS public.product_variants (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  size TEXT NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  compare_price DECIMAL(10,2),
+  actual_price DECIMAL(10,2),
+  stock_quantity INTEGER DEFAULT 0 NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  
+  CONSTRAINT check_positive_variant_price CHECK (price >= 0.0),
+  CONSTRAINT check_positive_variant_stock CHECK (stock_quantity >= 0)
 );
 
 -- 4. cart_items holding active user items before orders
@@ -189,6 +207,7 @@ CREATE TABLE IF NOT EXISTS public.coupons (
 CREATE TRIGGER set_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER set_categories_updated_at BEFORE UPDATE ON public.categories FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER set_products_updated_at BEFORE UPDATE ON public.products FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_product_variants_updated_at BEFORE UPDATE ON public.product_variants FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER set_cart_items_updated_at BEFORE UPDATE ON public.cart_items FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER set_orders_updated_at BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER set_order_items_updated_at BEFORE UPDATE ON public.order_items FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -220,6 +239,7 @@ $$ LANGUAGE plpgsql;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_variants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cart_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
@@ -275,6 +295,20 @@ USING (is_active = true OR public.is_admin());
 
 CREATE POLICY "Only admins can manage products" 
 ON public.products FOR ALL 
+TO authenticated 
+USING (public.is_admin())
+WITH CHECK (public.is_admin());
+
+-- ------------------------------------------
+-- C.5 PRODUCT VARIANTS POLICIES
+-- ------------------------------------------
+CREATE POLICY "Public can examine active variants" 
+ON public.product_variants FOR SELECT 
+TO authenticated, anon
+USING (true);
+
+CREATE POLICY "Only admins can manage variants" 
+ON public.product_variants FOR ALL 
 TO authenticated 
 USING (public.is_admin())
 WITH CHECK (public.is_admin());
@@ -433,6 +467,7 @@ CREATE INDEX IF NOT EXISTS idx_categories_slug ON public.categories(slug);
 CREATE INDEX IF NOT EXISTS idx_products_slug ON public.products(slug);
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON public.products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_is_active ON public.products(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON public.product_variants(product_id);
 CREATE INDEX IF NOT EXISTS idx_cart_items_user_id ON public.cart_items(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON public.orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_order_number ON public.orders(order_number);

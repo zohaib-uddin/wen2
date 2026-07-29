@@ -3,7 +3,7 @@ import { useShop } from "../context/ShopContext";
 import { AuthInput } from "../components/shared/AuthInput";
 import { ShieldAlert, Loader2 } from "lucide-react";
 import { useSignIn, useAuth } from "@clerk/clerk-react";
-import img1 from "../../src/assets/images/wen 26.png"
+import img1 from "../assets/images/caraousel1.jpg"
 
 
 export const SignInPage: React.FC = () => {

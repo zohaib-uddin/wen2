@@ -50,7 +50,7 @@ async function safeProfileUpdate(supabaseAdmin: any, payload: any, matchColumn: 
 
 async function startServer() {
   const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
   // 1. Health check route
   app.get("/api/health", (req, res) => {

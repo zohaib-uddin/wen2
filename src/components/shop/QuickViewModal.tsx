@@ -33,15 +33,23 @@ export const QuickViewModal: React.FC = () => {
   // Helper to parse sizes dynamically
   const parseSizes = () => {
     if (!activeProduct) return ["100ml"];
-    const sizeStr = activeProduct.size || activeProduct.variants?.[0] || activeProduct.size || "";
-    if (typeof sizeStr === "string") {
-      return sizeStr.split(",").map(s => s.trim()).filter(Boolean);
+    if (activeProduct.variants && activeProduct.variants.length > 0) {
+      return activeProduct.variants.map((v: any) => typeof v === 'string' ? v : v.size).filter(Boolean);
     }
-    if (Array.isArray(sizeStr)) {
-      return sizeStr;
-    }
-    return [sizeStr];
+    return [activeProduct.size || "100ml"];
   };
+
+  const currentVariant = activeProduct?.variants?.find((v: any) => (typeof v === 'string' ? v : v.size) === selectedVariant) || (activeProduct?.variants?.[0] && typeof activeProduct.variants[0] !== 'string' ? activeProduct.variants[0] : null) || null;
+
+  const getDynamicPrice = () => currentVariant ? currentVariant.price : activeProduct?.price;
+  const getDynamicOriginalPrice = () => currentVariant ? currentVariant.compare_price : activeProduct?.originalPrice;
+
+  const currentPrice = getDynamicPrice();
+  const originalPrice = getDynamicOriginalPrice();
+  const isOutOfStock = currentVariant 
+    ? currentVariant.stock_quantity <= 0 
+    : (activeProduct?.stock_quantity !== undefined ? activeProduct.stock_quantity <= 0 : false); 
+
 
   // Purely dynamic gallery images
   const gallery = activeProduct 
@@ -72,26 +80,15 @@ export const QuickViewModal: React.FC = () => {
   if (!activeProduct) return null;
 
   // Price calculation - fully simplified to match admin-provided static pricing
-  const getDynamicPrice = () => {
-    return activeProduct.price;
-  };
-
-  const getDynamicOriginalPrice = () => {
-    return activeProduct.originalPrice || null;
-  };
-
-  const currentPrice = getDynamicPrice();
-  const originalPrice = getDynamicOriginalPrice();
   const savings = originalPrice ? originalPrice - currentPrice : 0;
   const discountPercent = originalPrice 
     ? Math.round((savings / originalPrice) * 100) 
     : 19;
 
-  const isOutOfStock = activeProduct.stock_quantity !== undefined ? activeProduct.stock_quantity <= 0 : false;
-  const isWishlisted = isInWishlist(activeProduct.id);
+  const isWishlisted = activeProduct ? isInWishlist(activeProduct.id) : false;
 
   const handleAddToCart = async () => {
-    if (isOutOfStock || isAddingToCart) return;
+    if (isOutOfStock || isAddingToCart || !activeProduct) return;
     setIsAddingToCart(true);
 
     // Artificial latency delay
@@ -127,7 +124,7 @@ export const QuickViewModal: React.FC = () => {
   };
 
   const handleCopyShare = () => {
-    const shareUrl = `${window.location.origin}/#/product/${activeProduct.id}`;
+    const shareUrl = `${window.location.origin}/product/${activeProduct.id}`;
     navigator.clipboard.writeText(shareUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);

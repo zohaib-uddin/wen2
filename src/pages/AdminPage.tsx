@@ -221,6 +221,7 @@ export const AdminPage: React.FC = () => {
   // Product Add/Edit Overlay States
   const [isEditingProduct, setIsEditingProduct] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [isMultiSizeMode, setIsMultiSizeMode] = useState(false);
 
   const handleAddCategory = async (name: string) => {
     try {
@@ -580,33 +581,35 @@ export const AdminPage: React.FC = () => {
     );
   };
 
- const handleStartAddProduct = () => {
-  setEditingProduct({
-    id: `wen-${Date.now()}`,
-    name: "",
-    category: "Hair Oil",
-    price: 2500,
-    originalPrice: 3000,
-    rating: 5.0,
-    reviewCount: 0,
-    description: "",
-    keyBenefits: [],
-    potencyExplanation: "",
-    idealFor: [],
-    howToUse: "",
-    ingredients: "",
-    concern: "Dullness & Glow",
-    variants: ["100ml"],
-    selectedVariant: "100ml",
-    isBestSeller: false,
-    isNewArrival: true,
-    reviewsList: []
-  });
-  setIsEditingProduct(true);
-};
+  const handleStartAddProduct = () => {
+    setEditingProduct({
+      id: `wen-${Date.now()}`,
+      name: "",
+      category: "Select a Category",
+      price: 0,
+      originalPrice: 0,
+      rating: 5.0,
+      reviewCount: 0,
+      description: "",
+      keyBenefits: [],
+      potencyExplanation: "",
+      idealFor: [],
+      howToUse: "",
+      ingredients: "",
+      concern: "",
+      variants: [],
+      selectedVariant: "",
+      isBestSeller: false,
+      isNewArrival: true,
+      reviewsList: []
+    });
+    setIsMultiSizeMode(false);
+    setIsEditingProduct(true);
+  };
 
   const handleStartEditProduct = (prod: Product) => {
     setEditingProduct(prod);
+    setIsMultiSizeMode(!!(prod.variants && prod.variants.length > 0));
     setIsEditingProduct(true);
   };
 
@@ -643,11 +646,12 @@ export const AdminPage: React.FC = () => {
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-");
 
+      const hasVariants = isMultiSizeMode;
       const dbProductFields = {
         name: completeProduct.name,
         slug: generatedSlug,
-        price: Number(completeProduct.price),
-        compare_price: completeProduct.originalPrice ? Number(completeProduct.originalPrice) : null,
+        price: hasVariants ? null : Number(completeProduct.price),
+        compare_price: hasVariants ? null : (completeProduct.originalPrice ? Number(completeProduct.originalPrice) : null),
         description: completeProduct.description || "",
         short_description: completeProduct.potencyExplanation || "",
         concern: completeProduct.concern || null,
@@ -658,15 +662,17 @@ export const AdminPage: React.FC = () => {
         benefits: completeProduct.keyBenefits || [],
         ingredients: [completeProduct.ingredients || ""],
         how_to_use: completeProduct.howToUse || "",
-        stock_quantity: completeProduct.stock_quantity !== undefined ? Number(completeProduct.stock_quantity) : 100,
+        stock_quantity: hasVariants ? null : (completeProduct.stock_quantity !== undefined ? Number(completeProduct.stock_quantity) : 100),
         rating: completeProduct.rating !== undefined ? Number(completeProduct.rating) : 4.5,
         reviews_count: completeProduct.reviews_count !== undefined ? Number(completeProduct.reviews_count) : 10,
-        size: completeProduct.size || "100ml",
-        gallery_images: completeProduct.gallery_images || []
+        size: hasVariants ? null : (completeProduct.size || "100ml"),
+        gallery_images: completeProduct.gallery_images || [],
+        has_variants: hasVariants ? true : false,
       };
 
       const finalId = completeProduct.id;
       const isNew = finalId.startsWith("wen-");
+      let actualProductId = finalId;
 
       if (!isNew) {
         const { error } = await client
@@ -677,6 +683,7 @@ export const AdminPage: React.FC = () => {
         if (error) {
           console.error("Supabase Error updating product details:", error.message, error.details);
           alert(`Supabase Error: ${error.message}\nMake sure your public RLS policies allow authenticated/anonymous writes to the products table.`);
+          return;
         } else {
           console.log("Successfully updated product in Supabase catalog:", finalId);
         }
@@ -690,11 +697,34 @@ export const AdminPage: React.FC = () => {
         if (error) {
           console.error("Supabase Error inserting new product:", error.message, error.details);
           alert(`Supabase Error: ${error.message}\nMake sure your public RLS policies allow authenticated/anonymous writes to the products table.`);
+          return;
         } else if (data) {
           console.log("Successfully inserted product in Supabase catalog:", data);
+          actualProductId = data.id;
           // Sync state with the actual newly assigned product UUID from the database
           setProducts(prev => prev.map(p => p.id === completeProduct.id ? { ...p, id: data.id } : p));
         }
+      }
+
+      // Handle Product Variants Save
+      if (dbProductFields.has_variants && completeProduct.variants && completeProduct.variants.length > 0) {
+        // Remove existing variants
+        await client.from("product_variants").delete().eq("product_id", actualProductId);
+        
+        // Insert new ones
+        const variantInserts = completeProduct.variants.map((v: any) => ({
+          product_id: actualProductId,
+          size: v.size || "Default Size",
+          price: isNaN(Number(v.price)) ? 0 : Number(v.price),
+          compare_price: v.compare_price && !isNaN(Number(v.compare_price)) ? Number(v.compare_price) : null,
+          stock_quantity: v.stock_quantity && !isNaN(Number(v.stock_quantity)) ? Number(v.stock_quantity) : 0,
+        }));
+        
+        const { error: varError } = await client.from("product_variants").insert(variantInserts);
+        if (varError) console.error("Error saving variants:", varError);
+      } else {
+        // Clean up variants if turned off
+        await client.from("product_variants").delete().eq("product_id", actualProductId);
       }
     } catch (err) {
       console.warn("Could not persist product to Supabase.", err);
@@ -1222,7 +1252,7 @@ export const AdminPage: React.FC = () => {
                 <div>
                   <span className="text-[9px] font-mono tracking-[0.22em] text-[#C9A227] uppercase font-bold">Secret Apothecary Registry</span>
                   <h3 className="font-playfair text-2xl font-bold text-[#1F4D3A] tracking-wider uppercase">
-                    {editingProduct.id && products.some(p => p.id === editingProduct.id) ? "Modify Secret Formula" : "Register Fresh Secret Formulation"}
+                    {editingProduct.id && products.some(p => p.id === editingProduct.id) ? "Update Product" : "Add New Product"}
                   </h3>
                 </div>
               </div>
@@ -1414,49 +1444,145 @@ export const AdminPage: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="space-y-1.5 flex flex-col">
-                      <label className="font-bold text-[#1F4D3A] uppercase tracking-wider">Premium Cost price (Rs.)</label>
-                      <input 
-                        type="number" 
-                        value={editingProduct.price || 0}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, price: parseInt(e.target.value) || 0 })}
-                        required
-                        className="w-full border border-[#e5e5e5] focus:border-[#C9A227] px-4 py-3 rounded-xl outline-none" 
-                      />
-                    </div>
+                    <div className="space-y-1.5 flex flex-col sm:col-span-2 mt-4 p-5 border-2 border-[#E8E1D3] rounded-2xl bg-stone-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <label className="font-bold text-[#1F4D3A] uppercase tracking-wider text-sm flex items-center gap-2">
+                            <Layers className="w-4 h-4 text-[#C9A227]" />
+                            Pricing & Sizing Strategy
+                          </label>
+                          <p className="text-[10px] text-[#757575] mt-1">Enable multiple sizes for this formulation (e.g. 50ml, 100ml, 250ml).</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] font-bold text-[#1F4D3A] uppercase">{isMultiSizeMode ? "Multi-Size" : "Single Size"}</span>
+                          <Switch 
+                            checked={isMultiSizeMode}
+                            onChange={(val) => {
+                              setIsMultiSizeMode(val);
+                              // Preserve data: only initialize empty variants if switching to multi-size and it's empty
+                              if (val && (!editingProduct.variants || editingProduct.variants.length === 0)) {
+                                setEditingProduct({
+                                  ...editingProduct,
+                                  variants: [{
+                                    id: `var-${Date.now()}`,
+                                    size: editingProduct.size || "100ml",
+                                    price: editingProduct.price || 0,
+                                    compare_price: editingProduct.originalPrice || 0,
+                                    stock_quantity: editingProduct.stock_quantity || 0,
+                                  }]
+                                });
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                      
+                      {isMultiSizeMode ? (
+                        <div className="space-y-4 pt-4 border-t border-[#E8E1D3]">
+                          {editingProduct.variants?.map((v: any, index: number) => (
+                            <div key={v.id || index} className="grid grid-cols-1 sm:grid-cols-5 gap-3 p-4 bg-white border border-[#E8E1D3] rounded-xl items-end relative shadow-xs">
+                              <div className="flex flex-col space-y-1.5 sm:col-span-1">
+                                <label className="text-[9px] font-bold text-[#1F4D3A] uppercase tracking-wider">Size/Volume</label>
+                                <input type="text" placeholder="e.g. 50ml" value={v.size} onChange={e => {
+                                  const newVars = [...editingProduct.variants!];
+                                  newVars[index].size = e.target.value;
+                                  setEditingProduct({...editingProduct, variants: newVars});
+                                }} className="border border-[#e5e5e5] focus:border-[#C9A227] px-3 py-2.5 rounded-lg outline-none text-xs" />
+                              </div>
+                              <div className="flex flex-col space-y-1.5 sm:col-span-1">
+                                <label className="text-[9px] font-bold text-[#1F4D3A] uppercase tracking-wider">Compare Price</label>
+                                <input type="number" placeholder="0" value={v.compare_price || 0} onChange={e => {
+                                  const newVars = [...editingProduct.variants!];
+                                  newVars[index].compare_price = Number(e.target.value);
+                                  setEditingProduct({...editingProduct, variants: newVars});
+                                }} className="border border-[#e5e5e5] focus:border-[#C9A227] px-3 py-2.5 rounded-lg outline-none text-xs" />
+                              </div>
+                              <div className="flex flex-col space-y-1.5 sm:col-span-1">
+                                <label className="text-[9px] font-bold text-[#1F4D3A] uppercase tracking-wider">Sale Price (Rs)</label>
+                                <input type="number" placeholder="0" value={v.price} onChange={e => {
+                                  const newVars = [...editingProduct.variants!];
+                                  newVars[index].price = Number(e.target.value);
+                                  setEditingProduct({...editingProduct, variants: newVars});
+                                }} className="border border-[#e5e5e5] focus:border-[#C9A227] px-3 py-2.5 rounded-lg outline-none text-xs font-bold text-emerald-700" />
+                              </div>
+                              <div className="flex flex-col space-y-1.5 sm:col-span-1">
+                                <label className="text-[9px] font-bold text-[#1F4D3A] uppercase tracking-wider">Stock Qty</label>
+                                <input type="number" placeholder="0" value={v.stock_quantity} onChange={e => {
+                                  const newVars = [...editingProduct.variants!];
+                                  newVars[index].stock_quantity = Number(e.target.value);
+                                  setEditingProduct({...editingProduct, variants: newVars});
+                                }} className="border border-[#e5e5e5] focus:border-[#C9A227] px-3 py-2.5 rounded-lg outline-none text-xs" />
+                              </div>
+                              <div className="sm:col-span-1 flex justify-end pb-1">
+                                <button type="button" onClick={() => {
+                                  const newVars = editingProduct.variants!.filter((_, i) => i !== index);
+                                  setEditingProduct({...editingProduct, variants: newVars});
+                                }} className="p-2.5 bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-100 flex items-center justify-center transition-colors shadow-xs">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          <div className="flex justify-start">
+                            <button type="button" onClick={() => {
+                              setEditingProduct({
+                                ...editingProduct,
+                                variants: [...editingProduct.variants!, {
+                                }]
+                              })
+                            }} className="px-4 py-2.5 bg-[#C9A227]/10 text-[#C9A227] hover:bg-[#C9A227]/20 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-colors cursor-pointer">
+                              <Plus className="w-4 h-4" /> Add Another Size Variant
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-4 border-t border-[#E8E1D3]">
+                          <div className="space-y-1.5 flex flex-col">
+                            <label className="font-bold text-[#1F4D3A] uppercase tracking-wider">Compare Price (Rs.)</label>
+                            <input 
+                              type="number" 
+                              value={editingProduct.originalPrice || 0}
+                              onChange={(e) => setEditingProduct({ ...editingProduct, originalPrice: parseInt(e.target.value) || 0 })}
+                              className="w-full border border-[#e5e5e5] focus:border-[#C9A227] px-4 py-3 rounded-xl outline-none" 
+                            />
+                          </div>
 
-                    <div className="space-y-1.5 flex flex-col">
-                      <label className="font-bold text-[#1F4D3A] uppercase tracking-wider">Original Price (Strikeout - Rs.)</label>
-                      <input 
-                        type="number" 
-                        value={editingProduct.originalPrice || 0}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, originalPrice: parseInt(e.target.value) || 0 })}
-                        className="w-full border border-[#e5e5e5] focus:border-[#C9A227] px-4 py-3 rounded-xl outline-none" 
-                      />
-                    </div>
+                          <div className="space-y-1.5 flex flex-col">
+                            <label className="font-bold text-[#1F4D3A] uppercase tracking-wider">Sale Price (Rs.)</label>
+                            <input 
+                              type="number" 
+                              value={editingProduct.price || 0}
+                              onChange={(e) => setEditingProduct({ ...editingProduct, price: parseInt(e.target.value) || 0 })}
+                              required
+                              className="w-full border border-[#e5e5e5] focus:border-[#C9A227] px-4 py-3 rounded-xl outline-none font-bold text-emerald-700" 
+                            />
+                          </div>
 
-                    <div className="space-y-1.5 flex flex-col">
-                      <label className="font-bold text-[#1F4D3A] uppercase tracking-wider">Product Size (e.g. 100ml, 250ml)</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. 100ml"
-                        value={editingProduct.size || "100ml"}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, size: e.target.value })}
-                        className="w-full border border-[#e5e5e5] focus:border-[#C9A227] px-4 py-3 rounded-xl outline-none" 
-                      />
-                    </div>
+                          <div className="space-y-1.5 flex flex-col">
+                            <label className="font-bold text-[#1F4D3A] uppercase tracking-wider">Product Size</label>
+                            <input 
+                              type="text" 
+                              placeholder="e.g. 100ml"
+                              value={editingProduct.size || ""}
+                              onChange={(e) => setEditingProduct({ ...editingProduct, size: e.target.value })}
+                              className="w-full border border-[#e5e5e5] focus:border-[#C9A227] px-4 py-3 rounded-xl outline-none" 
+                            />
+                          </div>
 
-                    <div className="space-y-1.5 flex flex-col">
-                      <label className="font-bold text-[#1F4D3A] uppercase tracking-wider">Stock Quantity</label>
-                      <input 
-                        type="number" 
-                        value={editingProduct.stock_quantity !== undefined ? editingProduct.stock_quantity : 100}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, stock_quantity: parseInt(e.target.value) || 0 })}
-                        required
-                        className="w-full border border-[#e5e5e5] focus:border-[#C9A227] px-4 py-3 rounded-xl outline-none" 
-                      />
+                          <div className="space-y-1.5 flex flex-col sm:col-span-3">
+                            <label className="font-bold text-[#1F4D3A] uppercase tracking-wider">Stock Quantity</label>
+                            <input 
+                              type="number" 
+                              value={editingProduct.stock_quantity !== undefined ? editingProduct.stock_quantity : 0}
+                              onChange={(e) => setEditingProduct({ ...editingProduct, stock_quantity: parseInt(e.target.value) || 0 })}
+                              required
+                              className="w-full max-w-[200px] border border-[#e5e5e5] focus:border-[#C9A227] px-4 py-3 rounded-xl outline-none" 
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
-
+                    
                     <div className="space-y-1.5 flex flex-col">
                       <label className="font-bold text-[#1F4D3A] uppercase tracking-wider">Review Stars (0.0 to 5.0)</label>
                       <input 
@@ -2082,7 +2208,7 @@ export const AdminPage: React.FC = () => {
                       className="bg-white border border-[#E8E1D3] rounded-3xl p-6 space-y-4 text-xs text-left"
                     >
                       <h5 className="font-bold text-sm text-[#1F4D3A] uppercase tracking-wider">
-                        {editingCategory.id ? "Edit Category Details" : "Register New Category"}
+                        {editingCategory.id ? "Edit Category Details" : "Add New Category"}
                       </h5>
                       <form onSubmit={handleSaveCategory} className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
