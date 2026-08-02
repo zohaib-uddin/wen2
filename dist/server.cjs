@@ -1973,38 +1973,13 @@ async function startServer() {
       if (!adminProfile || adminProfile.role !== "admin") {
         return res.status(403).json({ error: "Forbidden" });
       }
-      const { error: updateProdsError } = await supabaseAdmin.from("products").update({ category_id: null, category: null }).eq("category_id", id);
+      const { error: updateProdsError } = await supabaseAdmin.from("products").update({ category_id: null }).eq("category_id", id);
       if (updateProdsError) throw updateProdsError;
       const { error } = await supabaseAdmin.from("categories").delete().eq("id", id);
       if (error) throw error;
       return res.json({ success: true });
     } catch (err) {
       console.error("Admin Delete Category API error:", err);
-      return res.status(500).json({ error: err.message });
-    }
-  });
-  app.delete("/api/admin/products/:id", async (req, res) => {
-    const { id } = req.params;
-    const clerkId = req.headers["x-clerk-id"];
-    if (!clerkId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-    const supabaseAdmin = (0, import_supabase_js.createClient)(supabaseUrl, supabaseServiceKey);
-    try {
-      const { data: adminProfile } = await supabaseAdmin.from("profiles").select("role").eq("clerk_id", clerkId).maybeSingle();
-      if (!adminProfile || adminProfile.role !== "admin") {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-      await supabaseAdmin.from("cart_items").delete().eq("product_id", id);
-      await supabaseAdmin.from("wishlist").delete().eq("product_id", id);
-      await supabaseAdmin.from("reviews").delete().eq("product_id", id);
-      const { error } = await supabaseAdmin.from("products").delete().eq("id", id);
-      if (error) throw error;
-      return res.json({ success: true });
-    } catch (err) {
-      console.error("Admin Delete Product API error:", err);
       return res.status(500).json({ error: err.message });
     }
   });

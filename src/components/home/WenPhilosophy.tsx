@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion, useInView } from "motion/react";
 import { useShop } from "../../context/ShopContext";
-import { ArrowLeft, ArrowRight } 
-from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useScrollArrows } from "../../hooks/useScrollArrows";
 
 const AnimatedCounter = ({ value, suffix }: { value: number, suffix: string }) => {
@@ -75,6 +74,9 @@ export const WenPhilosophy: React.FC = () => {
     }
   ];
 
+  // Premium Glassmorphism Arrow Base Class
+  const arrowBaseClass = "absolute z-20 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/40 backdrop-blur-md border border-white/50 text-[#254936] shadow-md hover:bg-white/60 hover:scale-105 transition-all duration-300 cursor-pointer";
+
   return (
     <section className="bg-[#F4EBDB] pt-[24px] md:pt-[60px] pb-[40px] md:pb-[120px] font-sans">
       <div className="max-w-[1280px] mx-auto px-[16px] md:px-[24px]">
@@ -97,14 +99,16 @@ export const WenPhilosophy: React.FC = () => {
 
         {/* Mobile: Horizontal scroll, Desktop: Grid */}
         <div className="relative group">
+          
+          {/* 👈 Left Arrow: Premium Transparent & Vertically Centered */}
           <button
             onClick={scrollLeft}
-            className={`absolute left-0 md:-left-6 top-1/2 -translate-y-1/2 z-10 w-10 md:w-12 h-10 md:h-12 flex items-center justify-center text-[#254936] transition-all duration-300 cursor-pointer ${
-              isAtStart ? "opacity-0 pointer-events-none translate-x-[-10px]" : "opacity-100 translate-x-0"
+            className={`${arrowBaseClass} left-0 md:-left-6 top-1/2 -translate-y-1/2 ${
+              isAtStart ? "opacity-0 pointer-events-none -translate-x-4" : "opacity-100 translate-x-0"
             }`}
             aria-label="Scroll left"
           >
-            <ArrowLeft size={28} strokeWidth={2.5} className="md:w-8 md:h-8" />
+            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
           </button>
           
           <div 
@@ -113,39 +117,43 @@ export const WenPhilosophy: React.FC = () => {
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {stats.map((stat, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className="w-[75vw] shrink-0 md:w-auto snap-center flex flex-col items-center bg-white md:bg-transparent p-[24px] md:p-0 rounded-[16px] md:rounded-none"
-              onClick={() => navigate('shop')}
-            >
-              <h3 className="font-playfair text-[48px] md:text-[64px] font-bold text-[#B69355] mb-[8px] leading-none">
-                <AnimatedCounter value={stat.value} suffix={stat.suffix} />
-              </h3>
-              <span className="text-[#254936] text-[11px] md:text-[12px] font-bold uppercase tracking-[2px] mb-[8px] md:mb-[12px]">
-                {stat.label}
-              </span>
-              <p className="text-[12px] md:text-[13px] text-[#63786A] leading-[1.7] max-w-[280px]">
-                {stat.description}
-              </p>
-            </motion.div>
-          ))}
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                className="w-[75vw] shrink-0 md:w-auto snap-center flex flex-col items-center bg-white md:bg-transparent p-[24px] md:p-0 rounded-[16px] md:rounded-none shadow-sm md:shadow-none hover:shadow-md transition-shadow duration-300"
+                onClick={() => navigate('shop')}
+              >
+                <h3 className="font-playfair text-[48px] md:text-[64px] font-bold text-[#B69355] mb-[8px] leading-none">
+                  <AnimatedCounter value={stat.value} suffix={stat.suffix} />
+                </h3>
+                <span className="text-[#254936] text-[11px] md:text-[12px] font-bold uppercase tracking-[2px] mb-[8px] md:mb-[12px]">
+                  {stat.label}
+                </span>
+                <p className="text-[12px] md:text-[13px] text-[#63786A] leading-[1.7] max-w-[280px]">
+                  {stat.description}
+                </p>
+              </motion.div>
+            ))}
           </div>
 
+          {/* 👉 Right Arrow: Premium Transparent & Vertically Centered */}
           <button
             onClick={scrollRight}
-            className={`absolute right-0 md:-right-6 top-1/2 -translate-y-1/2 z-10 w-10 md:w-12 h-10 md:h-12 flex items-center justify-center text-[#254936] transition-all duration-300 cursor-pointer ${
-              isAtEnd ? "opacity-0 pointer-events-none translate-x-[10px]" : "opacity-100 translate-x-0"
+            className={`${arrowBaseClass} right-0 md:-right-6 top-1/2 -translate-y-1/2 ${
+              isAtEnd ? "opacity-0 pointer-events-none translate-x-4" : "opacity-100 translate-x-0"
             }`}
             aria-label="Scroll right"
           >
-            <ArrowRight size={28} strokeWidth={2.5} className="md:w-8 md:h-8" />
+            <ArrowRight className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
           </button>
+
         </div>
       </div>
     </section>
   );
 };
+
+export default WenPhilosophy;

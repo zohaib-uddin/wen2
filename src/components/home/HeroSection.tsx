@@ -5,7 +5,7 @@ import { useShop } from "../../context/ShopContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // Images
-import img1 from '../../assets/images/banner1.jpg'
+import img1 from '../../assets/images/banner1.webp';
 
 const slides = [
   {
@@ -54,12 +54,27 @@ const variants = {
 };
 
 export const HeroSection: React.FC = () => {
-  const { products, productsLoading, addToCart, navigate } = useShop();
+  const { navigate } = useShop(); // productsLoading hata diya taake banner block na ho
   const [[page, direction], setPage] = useState([0, 0]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const slideIndex = Math.abs(page % slides.length);
   const currentSlide = slides[slideIndex];
+
+  // 🚀 1. PRELOAD MAGIC: Image ko foran download karne ke liye browser ko high priority signal
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = img1;
+    document.head.appendChild(link);
+    
+    return () => {
+      if (document.head.contains(link)) {
+        document.head.removeChild(link);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (timerRef.current) {
@@ -81,25 +96,17 @@ export const HeroSection: React.FC = () => {
     setPage([page + newDirection, newDirection]);
   };
 
-  if (productsLoading) {
-    return (
-      <section className="relative w-full bg-[#F7F2EA] flex items-center justify-center aspect-[21/9] md:aspect-auto md:h-[80vh]">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-[40px] h-[40px] border-[4px] border-[#C9A227] border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      </section>
-    );
-  }
+  // ❌ YAHAN SE LOADING SPINNER KA CODE HATA DIYA HAI TAKAY BANNER FORAN DIKHAY
 
   return (
     <section
-      className="relative w-full md:h-[80vh] overflow-hidden bg-#254936"
+      className="relative w-full md:h-[80vh] overflow-hidden bg-[#254936]"
       id="hero-luxury-section"
       role="region"
       aria-label="Product Showcase"
     >
-      {/* Media Container - 21:9 on mobile, full height on desktop */}
-      <div className="relative w-full aspect-[21/9] md:absolute md:inset-0 md:w-full md:h-full">
+      {/* Media Container */}
+      <div className="relative w-full h-[250px] md:absolute md:inset-0 md:w-full md:h-full">
         <AnimatePresence initial={false} custom={direction}>
           <motion.div
             key={page}
@@ -118,25 +125,25 @@ export const HeroSection: React.FC = () => {
                 muted 
                 playsInline
                 preload="auto"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-[10%_50%] md:object-center"
               />
             ) : (
               <img
                 src={currentSlide.mediaUrl}
                 alt={currentSlide.productName}
-               loading="eager"
-fetchPriority="high"
+                loading="eager"       // ⚡ Foran load karne ka command
+                fetchPriority="high" // ⚡ Browser ko batata hai ke yeh sab se zaroori image hai
                 decoding="async"
-                className="w-full h-full object-contain md:object-cover"
-                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover object-[10%_50%] md:object-center"
               />
             )}
+            
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10 pointer-events-none" />
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Carousel Controls - Smaller on mobile */}
+      {/* Carousel Controls */}
       <div className="absolute bottom-[12px] md:bottom-[40px] left-1/2 -translate-x-1/2 z-20 flex items-center gap-[10px] md:gap-[24px]">
         <button 
            onClick={() => paginate(-1)} 

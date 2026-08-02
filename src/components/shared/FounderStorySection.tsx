@@ -1,7 +1,7 @@
 import React from "react";
 import { useShop } from "../../context/ShopContext";
 import { motion } from "motion/react";
-import img1 from "../../assets/images/wen 16.png";
+import img1 from "../../assets/images/wen 16.jpeg";
 
 export const FounderStorySection: React.FC = () => {
   const { navigate } = useShop();

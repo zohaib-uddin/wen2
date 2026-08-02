@@ -1,6 +1,5 @@
 import React, { useRef } from "react";
-import { Star, BadgeCheck, ArrowLeft, ArrowRight } 
-from "lucide-react";
+import { Star, BadgeCheck, ArrowLeft, ArrowRight } from "lucide-react";
 import { useScrollArrows } from "../../hooks/useScrollArrows";
 import { motion } from "motion/react";
 
@@ -26,26 +25,26 @@ export const TestimonialSection: React.FC = () => {
     }
   };
 
- const testimonials: Testimonial[] = [
+  const testimonials: Testimonial[] = [
     {
       name: "Zara Ahmed",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=100&w=400&auto=format&fit=crop",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=100&w=400&auto=format&fit=crop",
       text: '"Pakistan\'s salty water literally ruined my split ends. Two weeks with the Kashmiri Saffron Hair Serum and my scalp has never felt this hydrated and alive!"',
     },
     {
       name: "Maryam Malik",
-      avatar:
-        "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=100&w=400&auto=format&fit=crop",
+      avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=100&w=400&auto=format&fit=crop",
       text: '"Absolutely in love with the Acne Deep Cleanser. My skin texture is completely soft now, with no dry flares or oiliness mirroring under the Lahore humidity."',
     },
     {
       name: "Fatima Bilal",
-      avatar:
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=100&w=400&auto=format&fit=crop",
+      avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=100&w=400&auto=format&fit=crop",
       text: '"The Saffron night Glow Dream Cream cleared my dark spots in under 3 weeks. It feels unbelievably luxurious, smells elegant, and provides verified skin hydration."',
     },
   ];
+
+  // Premium Glassmorphism Arrow Base Class
+  const arrowBaseClass = "absolute z-20 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-[#254936] shadow-lg hover:bg-white/50 hover:scale-105 transition-all duration-300 cursor-pointer";
 
   return (
     <section
@@ -69,21 +68,22 @@ export const TestimonialSection: React.FC = () => {
             Loved by Thousands
           </h2>
           <p className="text-[11px] md:text-[15px] text-[#63786A] leading-[1.6] md:leading-[1.7] mt-[8px] md:mt-[12px] max-w-[500px]">
-            Hear from our esteemed clientele who have transformed their daily
-            rituals.
+            Hear from our esteemed clientele who have transformed their daily rituals.
           </p>
         </motion.div>
 
-        {/* Testimonials Grid */}
+        {/* Testimonials Grid with Premium Arrows */}
         <div className="relative group">
+          
+          {/* 👈 Left Arrow: Premium Transparent & Vertically Centered */}
           <button
             onClick={scrollLeft}
-            className={`absolute left-0 md:-left-6 top-1/2 -translate-y-1/2 z-10 w-10 md:w-12 h-10 md:h-12 flex items-center justify-center text-[#254936] transition-all duration-300 cursor-pointer ${
-              isAtStart ? "opacity-0 pointer-events-none translate-x-[-10px]" : "opacity-100 translate-x-0"
+            className={`${arrowBaseClass} left-0 md:-left-6 top-1/2 -translate-y-1/2 ${
+              isAtStart ? "opacity-0 pointer-events-none -translate-x-4" : "opacity-100 translate-x-0"
             }`}
             aria-label="Scroll left"
           >
-            <ArrowLeft size={28} strokeWidth={2.5} className="md:w-8 md:h-8" />
+            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
           </button>
 
           <div 
@@ -104,57 +104,61 @@ export const TestimonialSection: React.FC = () => {
                 }}
                 className="w-[75vw] md:w-[calc(33.333%-22px)] shrink-0 snap-center bg-white border border-[#E0D4BE] rounded-2xl p-[24px] md:p-[40px] flex flex-col hover:border-[#B69355]/30 hover:shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-300"
               >
-              {/* Stars */}
-              <div className="flex gap-[4px] mb-[16px] md:mb-[32px]">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className="w-[12px] md:w-[14px] h-[12px] md:h-[14px] text-[#B69355] fill-[#B69355]"
+                {/* Stars */}
+                <div className="flex gap-[4px] mb-[16px] md:mb-[32px]">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className="w-[12px] md:w-[14px] h-[12px] md:h-[14px] text-[#B69355] fill-[#B69355]"
+                    />
+                  ))}
+                </div>
+
+                {/* Review Text */}
+                <p className="font-playfair text-[15px] md:text-[18px] italic text-[#254936] leading-[1.6] md:leading-[1.7] mb-[24px] md:mb-[40px] flex-grow">
+                  {test.text}
+                </p>
+
+                {/* Footer */}
+                <div className="flex items-center gap-[12px] md:gap-[16px] mt-auto">
+                  <img
+                    src={test.avatar}
+                    alt={test.name}
+                    className="w-[36px] md:w-[48px] h-[36px] md:h-[48px] rounded-full object-cover"
+                    referrerPolicy="no-referrer"
+                    loading="lazy"
                   />
-                ))}
-              </div>
-
-              {/* Review Text */}
-              <p className="font-playfair text-[15px] md:text-[18px] italic text-[#254936] leading-[1.6] md:leading-[1.7] mb-[24px] md:mb-[40px] flex-grow">
-                {test.text}
-              </p>
-
-              {/* Footer */}
-              <div className="flex items-center gap-[12px] md:gap-[16px] mt-auto">
-                <img
-                  src={test.avatar}
-                  alt={test.name}
-                  className="w-[36px] md:w-[48px] h-[36px] md:h-[48px] rounded-full object-cover"
-                  referrerPolicy="no-referrer"
-                  loading="lazy"
-                />
-                <div>
-                  <h4 className="font-sans font-bold text-[11px] md:text-[13px] text-[#254936] tracking-[0.5px]">
-                    {test.name}
-                  </h4>
-                  <div className="flex items-center gap-1 mt-1">
-                    <BadgeCheck className="w-[10px] md:w-[12px] h-[10px] md:h-[12px] text-[#B69355]" />
-                    <span className="text-[9px] md:text-[11px] text-[#63786A] uppercase tracking-[1px] font-bold">
-                      Verified Buyer
-                    </span>
+                  <div>
+                    <h4 className="font-sans font-bold text-[11px] md:text-[13px] text-[#254936] tracking-[0.5px]">
+                      {test.name}
+                    </h4>
+                    <div className="flex items-center gap-1 mt-1">
+                      <BadgeCheck className="w-[10px] md:w-[12px] h-[10px] md:h-[12px] text-[#B69355]" />
+                      <span className="text-[9px] md:text-[11px] text-[#63786A] uppercase tracking-[1px] font-bold">
+                        Verified Buyer
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
           </div>
 
+          {/* 👉 Right Arrow: Premium Transparent & Vertically Centered */}
           <button
             onClick={scrollRight}
-            className={`absolute right-0 md:-right-6 top-1/2 -translate-y-1/2 z-10 w-10 md:w-12 h-10 md:h-12 flex items-center justify-center text-[#254936] transition-all duration-300 cursor-pointer ${
-              isAtEnd ? "opacity-0 pointer-events-none translate-x-[10px]" : "opacity-100 translate-x-0"
+            className={`${arrowBaseClass} right-0 md:-right-6 top-1/2 -translate-y-1/2 ${
+              isAtEnd ? "opacity-0 pointer-events-none translate-x-4" : "opacity-100 translate-x-0"
             }`}
             aria-label="Scroll right"
           >
-            <ArrowRight size={28} strokeWidth={2.5} className="md:w-8 md:h-8" />
+            <ArrowRight className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
           </button>
+
         </div>
       </div>
     </section>
   );
 };
+
+export default TestimonialSection;

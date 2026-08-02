@@ -4,8 +4,7 @@ import { motion } from "motion/react";
 import img1 from "../../assets/images/wen 7.png";
 import img2 from "../../assets/images/wen 8.png";
 import img3 from "../../assets/images/wen 9.png";
-import { ArrowLeft, ArrowRight } 
-from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useScrollArrows } from "../../hooks/useScrollArrows";
 
 interface CategoryItem {
@@ -23,20 +22,17 @@ export const CategoriesShowcase: React.FC = () => {
     {
       name: "Hair Care",
       key: "Hair Care",
-      image:
-        img1,
+      image: img1,
     },
     {
       name: "Skin Care",
       key: "Skin Care",
-      image:
-        img2,
+      image: img2,
     },
     {
       name: "Body Care",
       key: "Body Care",
-      image:
-        img3,
+      image: img3,
     },
   ];
 
@@ -57,6 +53,9 @@ export const CategoriesShowcase: React.FC = () => {
       scrollContainerRef.current.scrollBy({ left: 320, behavior: "smooth" });
     }
   };
+
+  // Premium Glassmorphism Arrow Base Class
+  const arrowBaseClass = "absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-[#254936] shadow-lg hover:bg-white/50 hover:scale-105 transition-all duration-300 cursor-pointer";
 
   return (
     <section
@@ -85,16 +84,18 @@ export const CategoriesShowcase: React.FC = () => {
           </p>
         </motion.div>
 
-        {/* Dynamic Cards Grid with Arrows */}
+        {/* Dynamic Cards Grid with Premium Arrows */}
         <div className="relative group">
+          
+          {/* Left Arrow - Floating over the left side of the image, vertically centered */}
           <button
             onClick={scrollLeft}
-            className={`absolute left-0 md:-left-6 top-1/2 -translate-y-1/2 z-10 w-10 md:w-12 h-10 md:h-12 flex items-center justify-center text-[#254936] transition-all duration-300 cursor-pointer ${
-              isAtStart ? "opacity-0 pointer-events-none translate-x-[-10px]" : "opacity-100 translate-x-0"
+            className={`${arrowBaseClass} left-2 md:left-4 ${
+              isAtStart ? "opacity-0 pointer-events-none -translate-x-4" : "opacity-100 translate-x-0"
             }`}
             aria-label="Scroll left"
           >
-            <ArrowLeft size={28} strokeWidth={2.5} className="md:w-8 md:h-8" />
+            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
           </button>
 
           <div 
@@ -116,7 +117,7 @@ export const CategoriesShowcase: React.FC = () => {
                 className="w-[75vw] shrink-0 md:w-[calc(33.333%-22px)] snap-center group cursor-pointer flex flex-col relative rounded-[20px] overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 bg-white"
                 onClick={() => handleCategoryClick(cat.key)}
               >
-                <div className="relative aspect-[4/3] md:aspect-[3/4] overflow-hidden">
+                <div className="relative aspect-[3/4] md:aspect-[3/4] overflow-hidden">
                   <img
                     src={cat.image}
                     alt={`${cat.name} Collection`}
@@ -124,6 +125,8 @@ export const CategoriesShowcase: React.FC = () => {
                     referrerPolicy="no-referrer"
                     loading="lazy"
                   />
+                  {/* Subtle gradient overlay to make arrows pop even more */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 </div>
                 
                 <div className="bg-white p-[16px] md:p-[24px] flex flex-col items-center text-center z-10 transition-colors duration-300 group-hover:bg-[#f9f9f9]">
@@ -138,15 +141,17 @@ export const CategoriesShowcase: React.FC = () => {
             ))}
           </div>
 
+          {/* Right Arrow - Floating over the right side of the image, vertically centered */}
           <button
             onClick={scrollRight}
-            className={`absolute right-0 md:-right-6 top-1/2 -translate-y-1/2 z-10 w-10 md:w-12 h-10 md:h-12 flex items-center justify-center text-[#254936] transition-all duration-300 cursor-pointer ${
-              isAtEnd ? "opacity-0 pointer-events-none translate-x-[10px]" : "opacity-100 translate-x-0"
+            className={`${arrowBaseClass} right-2 md:right-4 ${
+              isAtEnd ? "opacity-0 pointer-events-none translate-x-4" : "opacity-100 translate-x-0"
             }`}
             aria-label="Scroll right"
           >
-            <ArrowRight size={28} strokeWidth={2.5} className="md:w-8 md:h-8" />
+            <ArrowRight className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
           </button>
+
         </div>
       </div>
     </section>

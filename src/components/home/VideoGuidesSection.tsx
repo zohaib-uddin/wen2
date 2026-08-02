@@ -7,48 +7,50 @@ import vid4 from "../../assets/images/wen vid4.mp4";
 import vid5 from "../../assets/images/wen vid5.mp4";
 import vid6 from "../../assets/images/wen vid6.mp4";
 
-import { Play, Volume2, VolumeX, ArrowLeft, ArrowRight } 
-from "lucide-react";
+import { Play, Volume2, VolumeX, ArrowLeft, ArrowRight } from "lucide-react";
 import { useScrollArrows } from "../../hooks/useScrollArrows";
 
 export const VideoGuidesSection: React.FC = () => {
   const [playingId, setPlayingId] = useState<number | null>(null);
-  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
+  
   const { isAtStart, isAtEnd } = useScrollArrows(scrollContainerRef);
 
   const videos = [
-     {
+    {
       id: 1,
       title: "Unlock Your Glow with Wen-C Vitamin C Serum",
       description: "Discover how Wen-C Serum fights dullness and uneven tone. Packed with Vitamin C, Glutathione, and Ferulic Acid, this powerful antioxidant blend restores radiance and protects your skin for a brighter complexion.",
       videoUrl: vid1,
     },
-     {
+    {
       id: 2,
       title: "Clear Skin Journey with Wen Acne Control Serum",
       description: "Learn how to tackle acne, marks, and oiliness effectively. Formulated with Mandelic Acid, Tea Tree, and Neem, this serum targets blemishes and balances skin for a smooth, clear complexion over time.",
       videoUrl: vid2,
     },
-     {
+    {
       id: 3,
       title: "Fade Dark Spots with Wenglow Glutathione Serum",
       description: "Say goodbye to dullness and uneven tone. Powered by Glutathione, Vitamin C, and Niacinamide, this advanced brightening serum fades dark spots and hydrates your skin for a radiant, even complexion.",
       videoUrl: vid3,
     },
-     {
+    {
       id: 4,
       title: "Affordable Anti-Aging with WenAging Serum",
       description: "Discover a budget-friendly way to fight wrinkles and age spots. Enriched with Pentapeptides and Hyaluronic Acid, this serum boosts collagen production for hydrated, youthful-looking skin without the high price tag.",
       videoUrl: vid4,
     },
-     {
+    {
       id: 5,
       title: "Relief from Itching with Wen Scabi Soap",
       description: "Struggling with itching or fungal infections? Discover how Wen Scabi Soap deeply cleanses the skin to eliminate scabies and soothe irritation for lasting comfort and relief.",
       videoUrl: vid5,
     },
-     {
+    {
       id: 6,
       title: "Gentle Cleansing for Oily & Acne-Prone Skin",
       description: "Looking for a gentle cleanser that fights grease? Wen Acni Soap removes excess oil and daily impurities without harshness, leaving your acne-prone skin feeling fresh, clean, and balanced.",
@@ -58,8 +60,16 @@ export const VideoGuidesSection: React.FC = () => {
 
   const handlePlayClick = (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
+    
+    if (playingId !== null && playingId !== id) {
+      const oldVideoEl = videoRefs.current[playingId];
+      if (oldVideoEl) {
+        oldVideoEl.pause();
+      }
+    }
+
     setPlayingId(id);
-    const videoEl = document.getElementById(`video-${id}`) as HTMLVideoElement;
+    const videoEl = videoRefs.current[id];
     if (videoEl) {
       videoEl.play();
     }
@@ -82,6 +92,9 @@ export const VideoGuidesSection: React.FC = () => {
     }
   };
 
+  // Premium Glassmorphism Arrow Base Class (Targeted at Video Middle)
+  const arrowBaseClass = "absolute z-30 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-[#254936] shadow-lg hover:bg-white/50 hover:scale-105 transition-all duration-300 cursor-pointer";
+
   return (
     <section className="bg-white py-[40px] md:py-[80px] lg:py-[120px] font-sans overflow-hidden">
       <div className="max-w-[1280px] mx-auto px-[16px] md:px-[24px]">
@@ -98,14 +111,15 @@ export const VideoGuidesSection: React.FC = () => {
         </div>
 
         <div className="relative group">
+          {/* 👈 Left Arrow: Positioned exactly at the vertical middle of the VIDEO portion */}
           <button
             onClick={scrollLeft}
-            className={`absolute left-0 md:-left-6 top-1/2 -translate-y-1/2 z-10 w-10 md:w-12 h-10 md:h-12 flex items-center justify-center text-[#254936] transition-all duration-300 cursor-pointer ${
-              isAtStart ? "opacity-0 pointer-events-none translate-x-[-10px]" : "opacity-100 translate-x-0"
+            className={`${arrowBaseClass} left-0 md:-left-6 top-[160px] md:top-[250px] -translate-y-1/2 ${
+              isAtStart ? "opacity-0 pointer-events-none -translate-x-4" : "opacity-100 translate-x-0"
             }`}
             aria-label="Scroll left"
           >
-            <ArrowLeft size={28} strokeWidth={2.5} className="md:w-8 md:h-8" />
+            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
           </button>
 
           <div 
@@ -127,11 +141,15 @@ export const VideoGuidesSection: React.FC = () => {
                   <div 
                     className="relative aspect-[3/4] md:aspect-[9/16] max-h-[500px] bg-gray-100 rounded-2xl md:rounded-3xl overflow-hidden mb-[16px] md:mb-[24px] cursor-pointer shadow-sm"
                     onClick={(e) => {
+                      e.stopPropagation();
+                      const videoEl = videoRefs.current[video.id];
+                      if (!videoEl) return;
+
                       if (isPlaying) {
-                        const videoEl = document.getElementById(`video-${video.id}`) as HTMLVideoElement;
-                        if (videoEl) {
-                          if (videoEl.paused) videoEl.play();
-                          else videoEl.pause();
+                        if (videoEl.paused) {
+                          videoEl.play();
+                        } else {
+                          videoEl.pause();
                         }
                       } else {
                         handlePlayClick(e, video.id);
@@ -139,29 +157,28 @@ export const VideoGuidesSection: React.FC = () => {
                     }}
                   >
                     <video
-                      id={`video-${video.id}`}
+                      ref={(el) => { videoRefs.current[video.id] = el; }}
                       src={video.videoUrl}
-                      poster={video.poster}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       muted={isMuted}
                       loop
                       playsInline
                     />
                     
-                    {/* Play Button Overlay (shown when not playing) */}
+                    {/* Play Button Overlay */}
                     {!isPlaying && (
                       <>
                         <div className="absolute inset-0 bg-[#254936]/20 group-hover:bg-[#254936]/10 transition-colors duration-300" />
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[48px] md:w-[60px] h-[48px] md:h-[60px] bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 shadow-xl">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[48px] md:w-[60px] h-[48px] md:h-[60px] bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 shadow-xl z-20">
                           <Play className="w-[16px] md:w-[20px] h-[16px] md:h-[20px] text-[#254936] fill-[#254936] ml-1" />
                         </div>
                       </>
                     )}
 
-                    {/* Volume Control Overlay (shown when playing) */}
+                    {/* Volume Control Overlay */}
                     {isPlaying && (
                       <div 
-                        className="absolute bottom-4 right-4 w-[36px] md:w-[40px] h-[36px] md:h-[40px] bg-[#254936]/50 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-[#254936]/70 transition-colors z-10"
+                        className="absolute bottom-4 right-4 w-[36px] md:w-[40px] h-[36px] md:h-[40px] bg-[#254936]/50 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-[#254936]/70 transition-colors z-20"
                         onClick={handleToggleMute}
                       >
                         {isMuted ? <VolumeX className="w-4 md:w-5 h-4 md:h-5" /> : <Volume2 className="w-4 md:w-5 h-4 md:h-5" />}
@@ -171,26 +188,29 @@ export const VideoGuidesSection: React.FC = () => {
 
                   <h3 className="font-playfair text-[18px] md:text-[20px] font-bold text-[#254936] mb-[8px] md:mb-[12px] group-hover:text-[#B69355] transition-colors">
                     {video.title}
-                </h3>
-                <p className="text-[14px] text-[#63786A] leading-[1.6]">
-                  {video.description}
-                </p>
-              </motion.div>
-            );
-          })}
+                  </h3>
+                  <p className="text-[14px] text-[#63786A] leading-[1.6]">
+                    {video.description}
+                  </p>
+                </motion.div>
+              );
+            })}
           </div>
 
+          {/* 👉 Right Arrow: Positioned exactly at the vertical middle of the VIDEO portion */}
           <button
             onClick={scrollRight}
-            className={`absolute right-0 md:-right-6 top-1/2 -translate-y-1/2 z-10 w-10 md:w-12 h-10 md:h-12 flex items-center justify-center text-[#254936] transition-all duration-300 cursor-pointer ${
-              isAtEnd ? "opacity-0 pointer-events-none translate-x-[10px]" : "opacity-100 translate-x-0"
+            className={`${arrowBaseClass} right-0 md:-right-6 top-[160px] md:top-[250px] -translate-y-1/2 ${
+              isAtEnd ? "opacity-0 pointer-events-none translate-x-4" : "opacity-100 translate-x-0"
             }`}
             aria-label="Scroll right"
           >
-            <ArrowRight size={28} strokeWidth={2.5} className="md:w-8 md:h-8" />
+            <ArrowRight className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
           </button>
         </div>
       </div>
     </section>
   );
 };
+
+export default VideoGuidesSection;

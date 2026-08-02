@@ -46,7 +46,7 @@ export const Footer: React.FC = () => {
             </p>
             <div className="flex gap-[12px] mt-[16px]">
               {[
-                { name: 'Instagram', icon: Instagram, url: 'https://www.instagram.com/wen._.skincare' }, 
+                { name: 'Instagram', icon: Instagram, url: 'https://www.instagram.com/wenskincareandhairsecret' }, 
                 { name: 'Facebook', icon: Facebook, url: 'https://www.facebook.com/profile.php?id=61591159816514' }, 
                 { name: 'TikTok', icon: TikTok, url: 'https://www.tiktok.com/@wenhairoilandskinsecret' } 
               ].map((platform, i) => {
@@ -76,7 +76,7 @@ export const Footer: React.FC = () => {
               {[
                 { name: "Hair Oils", cat: "Hair Oil" },
                 { name: "Shampoos", cat: "Shampoo" },
-                { name: "Face Serums", cat: "Face Serum" },
+                { name: "Serum", cat: "Serum" },
                 { name: "Cleansers", cat: "Face Wash" },
                 { name: "Night Creams", cat: "Night Cream" }
               ].map((item, i) => (

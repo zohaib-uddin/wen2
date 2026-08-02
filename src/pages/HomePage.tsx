@@ -28,7 +28,7 @@ export const HomePage: React.FC = () => {
       <BestSellersSection />
 
       {/* 4. Featured Ingredients */}
-      <FeaturedIngredients />
+      {/* <FeaturedIngredients /> */}
 
       {/* 5. Categories Showcase */}
       <CategoriesShowcase />
@@ -40,7 +40,7 @@ export const HomePage: React.FC = () => {
       <WenPhilosophy />
 
       {/* 7. How It Works */}
-      <HowItWorks />
+      {/* <HowItWorks /> */}
 
       {/* 8. Before & After Results (Timeline) */}
       <TimelineSection />
@@ -52,10 +52,10 @@ export const HomePage: React.FC = () => {
       <FounderStorySection />
 
       {/* 11. Instagram Feed */}
-      <InstagramFeed />
+      {/* <InstagramFeed /> */}
 
       {/* 12. Newsletter CTA */}
-      <NewsletterCTASection />
+      {/* <NewsletterCTASection /> */}
 
     </div>
   );

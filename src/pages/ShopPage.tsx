@@ -175,7 +175,7 @@ export const ShopPage: React.FC = () => {
   const paginatedProducts = sortedProducts.slice(0, visibleCount);
 
   return (
-    <div className="bg-gradient-to-b from-[#F4EBDB]/30 to-white text-[#254936] min-h-screen py-8 lg:py-12 font-sans">
+   <div className="bg-[#F4EBDB]/50 text-[#254936] min-h-screen py-8 lg:py-12 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Luxury Breadcrumb bar */}
@@ -347,13 +347,13 @@ export const ShopPage: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-10">
-                <div 
-                  className={
-                    viewMode === "list"
-                      ? "space-y-6"
-                      : "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8"
-                  }
-                >
+            <div 
+  className={
+    viewMode === "list"
+      ? "space-y-6"
+      : "grid grid-cols-2 gap-2 md:grid-cols-2 md:gap-3 lg:grid-cols-3 lg:gap-6"
+  }
+>
                   {paginatedProducts.map((p) => (
                     <ProductCard key={p.id} product={p} viewMode={viewMode} />
                   ))}

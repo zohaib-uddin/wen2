@@ -2,46 +2,32 @@ import React, { useRef, useMemo } from "react";
 import { useShop } from "../../context/ShopContext";
 import { motion } from "motion/react";
 import { ProductCard } from "../shop/ProductCard";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useScrollArrows } from "../../hooks/useScrollArrows";
 
 export const BestSellersSection: React.FC = () => {
   const { products, productsLoading, navigate } = useShop();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const { isAtStart, isAtEnd } = useScrollArrows(scrollContainerRef);
 
   // Sort ALL products by creation date (Oldest first)
-  // Removed .slice(0, 8) limit to show ALL products as requested
   const displayProducts = useMemo(() => {
     if (!products || products.length === 0) return [];
     
-    // Check if any product actually has a date field to avoid NaN sorting issues
     const hasDateField = products.some((p: any) => p.created_at || p.createdAt || p.date);
     
     if (hasDateField) {
       return [...products].sort((a: any, b: any) => {
         const dateA = new Date(a.created_at || a.createdAt || a.date || 0).getTime();
         const dateB = new Date(b.created_at || b.createdAt || b.date || 0).getTime();
-        return dateA - dateB; // Ascending order: Oldest creation date comes first
+        return dateA - dateB;
       });
     }
     
-    // Fallback: If no date fields exist, trust the original DB order 
-    // (which ShopPage.tsx confirms is already oldest first)
     return products;
   }, [products]);
 
-  const scrollLeft = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -320, behavior: "smooth" });
-    }
-  };
-
-  const scrollRight = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 320, behavior: "smooth" });
-    }
-  };
+  // Only show first 16 products in the section
+  const displayedProducts = displayProducts.slice(0, 16);
+  const showViewAllButton = displayProducts.length > 16;
 
   if (productsLoading) {
     return (
@@ -53,7 +39,7 @@ export const BestSellersSection: React.FC = () => {
     );
   }
 
-  if (!displayProducts || displayProducts.length === 0) {
+  if (!displayedProducts || displayedProducts.length === 0) {
     return (
       <section className="py-[40px] md:py-[80px] lg:py-[120px] bg-white flex items-center justify-center">
         <div className="text-center">
@@ -65,7 +51,7 @@ export const BestSellersSection: React.FC = () => {
 
   return (
     <section
-      className="py-[40px] md:py-[120px] bg-[#F4EBDB] font-sans"
+      className="py-[40px] md:py-[80px] lg:py-[120px] bg-[#F4EBDB] font-sans"
       id="best-sellers-section-target"
     >
       <div className="max-w-[1280px] mx-auto px-[16px] md:px-[24px]">
@@ -89,65 +75,47 @@ export const BestSellersSection: React.FC = () => {
           </p>
         </motion.div>
 
-        {/* Product Carousel with Arrows */}
-        <div className="relative group">
-          <button
-            onClick={scrollLeft}
-            className={`absolute left-0 md:-left-6 top-1/2 -translate-y-1/2 z-10 w-10 md:w-12 h-10 md:h-12 flex items-center justify-center text-[#254936] transition-all duration-300 cursor-pointer ${
-              isAtStart ? "opacity-0 pointer-events-none translate-x-[-10px]" : "opacity-100 translate-x-0"
-            }`}
-            aria-label="Scroll left"
-          >
-            <ArrowLeft size={28} strokeWidth={2.5} className="md:w-8 md:h-8" />
-          </button>
+        {/* 👇 GRID: Mobile 2 cards (same as before) | Medium 3 | Large 4 */}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4 lg:gap-8">
+          {displayedProducts.map((product, idx) => (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{
+                duration: 0.5,
+                delay: idx * 0.1,
+                ease: [0.4, 0, 0.2, 1],
+              }}
+              className="w-full h-full"
+            >
+              <ProductCard
+                product={product}
+                viewMode="grid"
+                pageContext="best-sellers"
+                showCategory={false}
+                showDiscount={true}
+                showWishlist={true}
+                showQuickView={true}
+                showSize={true}
+              />
+            </motion.div>
+          ))}
+        </div>
 
-          <div
-            ref={scrollContainerRef}
-            className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar pb-4 gap-[16px] md:gap-[24px] px-[16px] md:px-0 -mx-[16px] md:mx-0 scroll-smooth"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {displayProducts.map((product, idx) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{
-                  duration: 0.5,
-                  delay: idx * 0.1,
-                  ease: [0.4, 0, 0.2, 1],
-                }}
-                className="w-[85vw] sm:w-[280px] md:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start"
-              >
-                <ProductCard
-                  product={product}
-                  viewMode="grid"
-                  pageContext="best-sellers"
-                />
-              </motion.div>
-            ))}
+        {/* View All Button */}
+        {showViewAllButton && (
+          <div className="flex justify-center mt-[32px] md:mt-[48px]">
+            <button
+              onClick={() => navigate("shop")}
+              className="inline-block text-[#B69355] hover:text-[#254936] font-bold text-[11px] md:text-[12px] uppercase tracking-[2px] transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[1px] after:bg-current after:origin-left after:scale-x-100 hover:after:scale-x-0 after:transition-transform after:duration-300"
+              id="view-all-products-btn"
+            >
+              View All Products
+            </button>
           </div>
-
-          <button
-            onClick={scrollRight}
-            className={`absolute right-0 md:-right-6 top-1/2 -translate-y-1/2 z-10 w-10 md:w-12 h-10 md:h-12 flex items-center justify-center text-[#254936] transition-all duration-300 cursor-pointer ${
-              isAtEnd ? "opacity-0 pointer-events-none translate-x-[10px]" : "opacity-100 translate-x-0"
-            }`}
-            aria-label="Scroll right"
-          >
-            <ArrowRight size={28} strokeWidth={2.5} className="md:w-8 md:h-8" />
-          </button>
-        </div>
-
-        <div className="flex justify-center mt-[32px] md:mt-[48px]">
-          <button
-            onClick={() => navigate("shop")}
-            className="inline-block text-[#B69355] hover:text-[#254936] font-bold text-[11px] md:text-[12px] uppercase tracking-[2px] transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[1px] after:bg-current after:origin-left after:scale-x-100 hover:after:scale-x-0 after:transition-transform after:duration-300"
-            id="view-all-products-btn"
-          >
-            All Products
-          </button>
-        </div>
+        )}
       </div>
     </section>
   );

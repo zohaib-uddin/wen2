@@ -2249,7 +2249,7 @@ const PORT = 3000;
     }
   });
 
-  // Categories API: Delete category with active products check
+   // Categories API: Delete category with active products check
   app.delete("/api/admin/categories/:id", async (req, res) => {
     const { id } = req.params;
     const clerkId = req.headers["x-clerk-id"] as string;
@@ -2272,10 +2272,10 @@ const PORT = 3000;
         return res.status(403).json({ error: "Forbidden" });
       }
 
-      // Nullify references in products table for products belonging to this category
+      // ✅ SIRF category_id null karo — category column exist nahi karta
       const { error: updateProdsError } = await supabaseAdmin
         .from("products")
-        .update({ category_id: null, category: null })
+        .update({ category_id: null })
         .eq("category_id", id);
 
       if (updateProdsError) throw updateProdsError;
@@ -2290,48 +2290,6 @@ const PORT = 3000;
       return res.json({ success: true });
     } catch (err: any) {
       console.error("Admin Delete Category API error:", err);
-      return res.status(500).json({ error: err.message });
-    }
-  });
-
-  // Products API: Delete product
-  app.delete("/api/admin/products/:id", async (req, res) => {
-    const { id } = req.params;
-    const clerkId = req.headers["x-clerk-id"] as string;
-    if (!clerkId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
-    try {
-      const { data: adminProfile } = await supabaseAdmin
-        .from("profiles")
-        .select("role")
-        .eq("clerk_id", clerkId)
-        .maybeSingle();
-
-      if (!adminProfile || adminProfile.role !== "admin") {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-
-      // First delete dependent records (cascades should handle some, but let's make it robust)
-      await supabaseAdmin.from("cart_items").delete().eq("product_id", id);
-      await supabaseAdmin.from("wishlist").delete().eq("product_id", id);
-      await supabaseAdmin.from("reviews").delete().eq("product_id", id);
-
-      const { error } = await supabaseAdmin
-        .from("products")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      return res.json({ success: true });
-    } catch (err: any) {
-      console.error("Admin Delete Product API error:", err);
       return res.status(500).json({ error: err.message });
     }
   });

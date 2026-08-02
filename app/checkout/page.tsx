@@ -287,7 +287,7 @@ export default function CheckoutPage() {
 
   if (checkoutCart.length === 0) {
     return (
-      <div className="py-24 text-center px-4 font-sans bg-gray-50/30 flex flex-col items-center justify-center min-h-[70vh]">
+        <div className="py-24 text-center px-4 font-sans bg-[#F4EBDB] flex flex-col items-center justify-center min-h-[70vh]">
         <div className="p-4 bg-[#F7F2EA] text-[#1F4D3A] rounded-full mb-4">
           <Truck className="w-8 h-8" />
         </div>
@@ -306,7 +306,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="bg-white min-h-screen pb-20 pt-8 text-left font-sans" id="checkout-main-frame">
+    <div className="bg-[#F4EBDB] min-h-screen pb-20 pt-8 text-left font-sans" id="checkout-main-frame">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Back Link block */}
@@ -328,7 +328,7 @@ export default function CheckoutPage() {
         <div className="lg:hidden mb-6">
           <button 
             onClick={() => setSummaryOpenMobile(!summaryOpenMobile)}
-            className="w-full bg-[#F7F2EA] border border-gray-150 p-4.5 rounded-2xl flex items-center justify-between text-xs font-bold text-[#1F4D3A]"
+            className="w-full bg-white border border-[#E8E1D3] p-4 rounded-2xl flex items-center justify-between text-xs font-bold text-[#254936] shadow-sm"
           >
             <span>Show Order Summary (Total: Rs. {(subtotal + shippingCost).toLocaleString()})</span>
             <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${summaryOpenMobile ? "rotate-180" : ""}`} />
@@ -374,7 +374,7 @@ export default function CheckoutPage() {
                     </label>
                     <input 
                       type="email" 
-                      placeholder="e.g. patrons@domain.com"
+                      placeholder="e.g. ali@gmail.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className={`w-full px-[20px] py-[16px] bg-white border rounded-[12px] text-[14px] focus:outline-none focus:ring-1 transition ${
