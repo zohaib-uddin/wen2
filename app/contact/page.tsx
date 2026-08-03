@@ -29,7 +29,7 @@ export default function ContactPage() {
     {
       icon: <Clock className="w-5 h-5 text-[#C9A227] stroke-[1.5]" />,
       title: "Apothecary Lab Hours",
-      value: "Mon - Sat, 10:00 AM - 8:00 PM",
+      value: "Mon - Sun, Open 24 Hours",
       desc: "Closed on gazetted National Pakistani holidays and religious festivals."
     }
   ];
