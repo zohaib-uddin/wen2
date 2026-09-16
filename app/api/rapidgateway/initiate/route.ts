@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
 
     // Step 2: Create Transaction for Hosted Checkout (Redirect Flow)
     const formData = new URLSearchParams();
-    formData.append('MERCHANT_ID', process.env.RAPIDGATEWAY_MERCHANT_ID || 'client');
+    // MERCHANT_ID must be numeric for sandbox - use "1" for testing
+    formData.append('MERCHANT_ID', process.env.RAPIDGATEWAY_MERCHANT_ID || '1');
     formData.append('MERCHANT_NAME', 'Wen Hair & Skin Secret');
     formData.append('TXNAMT', amount.toString());
     formData.append('CURRENCY_CODE', 'PKR');

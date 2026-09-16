@@ -291,10 +291,28 @@ export default function CheckoutPage() {
         }),
       });
 
+      // Check if response is OK before parsing JSON
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = `Payment initiation failed: ${response.status}`;
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // Response was not JSON, use status text
+          if (errorText) {
+            errorMessage = errorText.substring(0, 200);
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
+
       const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to initiate payment');
+      if (!result.redirectUrl) {
+        throw new Error('No redirect URL received from payment gateway');
       }
 
       console.log('[Checkout] Payment initiated, redirecting to:', result.redirectUrl);
@@ -303,10 +321,11 @@ export default function CheckoutPage() {
       window.location.href = result.redirectUrl;
 
     } catch (error: any) {
-      console.error('[Checkout] RapidGateway payment error:', error.message);
-      setRapidGatewayError(error.message || 'Payment initiation failed. Please try again.');
+      console.error('[Checkout] RapidGateway payment error:', error);
+      const errorMsg = error.message || 'Payment initiation failed. Please try again.';
+      setRapidGatewayError(errorMsg);
       triggerToast(
-        error.message || 'Payment initiation failed. Please try COD or contact support.',
+        errorMsg,
         '',
         '',
         'error'
