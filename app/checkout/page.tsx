@@ -103,6 +103,15 @@ export default function CheckoutPage() {
   // RapidGateway payment states
   const [isRapidGatewayProcessing, setIsRapidGatewayProcessing] = useState(false);
   const [rapidGatewayError, setRapidGatewayError] = useState<string | null>(null);
+  const [selectedRapidMethod, setSelectedRapidMethod] = useState<string>('card'); // Default: card
+
+  // RapidGateway Payment Methods Configuration
+  const rapidMethods = [
+    { id: 'card', name: 'Credit/Debit Card', description: 'Visa, Mastercard', icon: '💳' },
+    { id: 'jazzcash', name: 'JazzCash', description: 'Mobile Wallet', icon: '📱' },
+    { id: 'easypaisa', name: 'EasyPaisa', description: 'Mobile Wallet', icon: '📲' },
+    { id: 'bank', name: 'Bank Transfer', description: 'Bank Al Habib', icon: '🏦' },
+  ];
 
   // Error messages
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -258,6 +267,7 @@ export default function CheckoutPage() {
         amount: totalAmount,
         email,
         phone,
+        selectedMethod: selectedRapidMethod,
         environment: 'TEST'
       });
 
@@ -273,6 +283,7 @@ export default function CheckoutPage() {
           customerEmail: email,
           customerMobile: phone.replace(/[-\s/()]/g, ''),
           customerName: fullName,
+          paymentMethod: selectedRapidMethod, // Selected method pass karna (card, jazzcash, easypaisa, bank)
           successUrl: `${window.location.origin}/order-success?order=${basketId}`,
           failureUrl: `${window.location.origin}/checkout?payment=failed&order=${basketId}`,
           checkoutUrl: window.location.origin,
@@ -925,47 +936,66 @@ export default function CheckoutPage() {
 
                   {/* RapidGateway Payment Methods Info */}
                   {paymentChoice === "RAPIDGATEWAY" && (
-                    <div className="p-5 bg-gradient-to-br from-[#F7F2EA] to-white border-2 border-[#C9A227]/30 rounded-2xl text-xs space-y-3 text-[#1F4D3A] transition animate-fade-in-up">
+                    <div className="p-5 bg-gradient-to-br from-[#F7F2EA] to-white border-2 border-[#C9A227]/30 rounded-2xl text-xs space-y-4 text-[#1F4D3A] transition animate-fade-in-up">
                       <div className="flex items-center gap-2 pb-2 border-b border-[#E8E1D3]">
                         <ShieldCheck className="w-5 h-5 text-[#C9A227]" />
                         <p className="font-bold text-sm uppercase tracking-wider">
-                          Secure Payment Gateway - Test Mode
+                          Select Payment Method - Test Mode
                         </p>
                       </div>
                       
-                      <div className="space-y-2">
+                      {/* Payment Method Selection Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {rapidMethods.map((method) => (
+                          <label
+                            key={method.id}
+                            className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                              selectedRapidMethod === method.id
+                                ? 'border-[#1F4D3A] bg-gradient-to-br from-[#1F4D3A]/10 to-white shadow-md'
+                                : 'border-[#E8E1D3] bg-white hover:border-[#C9A227] hover:shadow-sm'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="rapidPaymentMethod"
+                              value={method.id}
+                              checked={selectedRapidMethod === method.id}
+                              onChange={(e) => setSelectedRapidMethod(e.target.value)}
+                              className="absolute opacity-0 pointer-events-none"
+                            />
+                            <span className="text-2xl flex-shrink-0">{method.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className={`font-bold text-sm mb-0.5 ${
+                                selectedRapidMethod === method.id ? 'text-[#1F4D3A]' : 'text-[#1F4D3A]'
+                              }`}>
+                                {method.name}
+                              </p>
+                              <p className="text-[10px] text-[#757575] leading-tight">
+                                {method.description}
+                              </p>
+                            </div>
+                            <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                              selectedRapidMethod === method.id
+                                ? 'border-[#1F4D3A] bg-[#1F4D3A]'
+                                : 'border-[#E8E1D3] bg-white'
+                            }`}>
+                              {selectedRapidMethod === method.id && (
+                                <Check className="w-3 h-3 text-white stroke-[3]" />
+                              )}
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+
+                      <div className="space-y-2 pt-2">
                         <p className="font-semibold text-[11px] uppercase tracking-wide text-[#1F4D3A]">
-                          Available Payment Methods:
+                          How it works:
                         </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div className="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-[#E8E1D3]">
-                            <span className="text-lg">💳</span>
-                            <div>
-                              <p className="font-bold text-[11px] text-[#1F4D3A]">Credit/Debit Cards</p>
-                              <p className="text-[9px] text-[#757575]">Visa, Mastercard - International & Local</p>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-[#E8E1D3]">
-                            <span className="text-lg">📱</span>
-                            <div>
-                              <p className="font-bold text-[11px] text-[#1F4D3A]">Mobile Wallets</p>
-                              <p className="text-[9px] text-[#757575]">JazzCash, EasyPaisa</p>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-[#E8E1D3]">
-                            <span className="text-lg">🏦</span>
-                            <div>
-                              <p className="font-bold text-[11px] text-[#1F4D3A]">Bank Transfer</p>
-                              <p className="text-[9px] text-[#757575]">Bank Al Habib, All Pakistani Banks</p>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-[#E8E1D3]">
-                            <span className="text-lg">⚡</span>
-                            <div>
-                              <p className="font-bold text-[11px] text-[#1F4D3A]">Raast Instant</p>
-                              <p className="text-[9px] text-[#757575]">Instant Bank-to-Bank Transfer</p>
-                            </div>
-                          </div>
+                        <div className="text-[10px] text-[#757575] space-y-1">
+                          <p>• Select your preferred payment method above</p>
+                          <p>• Click "Place Order" to proceed to secure checkout</p>
+                          <p>• Complete payment on RapidGateway's hosted page</p>
+                          <p>• Return to this site after successful payment</p>
                         </div>
                       </div>
 

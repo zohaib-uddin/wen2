@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     
     // Required fields validate karna
-    const { amount, basketId, customerEmail, customerMobile, customerName, successUrl, failureUrl, checkoutUrl, description, paymentMethodType } = body;
+    const { amount, basketId, customerEmail, customerMobile, customerName, successUrl, failureUrl, checkoutUrl, description, paymentMethod } = body;
     
     if (!amount || amount <= 0) {
       return NextResponse.json(
@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
       amount,
       basketId,
       customerEmail,
+      paymentMethod: paymentMethod || 'card',
       environment: process.env.RAPIDGATEWAY_ENVIRONMENT || 'TEST'
     });
     
@@ -78,6 +79,7 @@ export async function POST(req: NextRequest) {
       failureUrl,
       checkoutUrl,
       description: description || `Order ${basketId}`,
+      paymentMethodType: paymentMethod || 'card', // card, jazzcash, easypaisa, bank
     });
     
     // Supabase mein order update karna with payment details (Phase 3)
@@ -91,7 +93,7 @@ export async function POST(req: NextRequest) {
           rapidgateway_basket_id: basketId,
           payment_method: 'rapidgateway',
           payment_status: 'pending',
-          payment_method_type: paymentMethodType || null,
+          payment_method_type: paymentMethod || null,
           updated_at: new Date().toISOString(),
         })
         .eq('order_number', basketId);
