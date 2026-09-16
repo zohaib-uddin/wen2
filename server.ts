@@ -5,6 +5,7 @@ import { createServer as createViteServer } from "vite";
 import { Webhook } from "svix";
 import { createClient } from "@supabase/supabase-js";
 import { sendOrderConfirmationEmail } from "./src/lib/email";
+import crypto from "crypto";
 
 async function safeProfileInsert(supabaseAdmin: any, payload: any) {
   // First, attempt to insert with all fields
