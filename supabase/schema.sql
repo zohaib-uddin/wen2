@@ -131,11 +131,19 @@ CREATE TABLE IF NOT EXISTS public.orders (
   discount_percentage INTEGER,
   tracking_id TEXT,
   notes TEXT,
+  -- RapidGateway Payment Integration Fields
+  rapidgateway_transaction_id TEXT,
+  rapidgateway_basket_id TEXT,
+  rapidgateway_session_id TEXT,
+  payment_method_type TEXT, -- 'CARD', 'EASYPAISA', 'JAZZCASH', 'BANK_TRANSFER', 'RAAST'
+  payment_gateway_response JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   
   CONSTRAINT check_order_status_valid CHECK (status IN ('pending', 'processing', 'shipped', 'delivered', 'cancelled')),
-  CONSTRAINT check_positive_total CHECK (total_amount >= 0.0)
+  CONSTRAINT check_positive_total CHECK (total_amount >= 0.0),
+  CONSTRAINT check_payment_method CHECK (payment_method IN ('cod', 'rapidgateway')),
+  CONSTRAINT check_payment_status CHECK (payment_status IN ('unpaid', 'paid', 'pending', 'failed', 'refunded'))
 );
 
 -- 6. order_items detail specifications per transaction

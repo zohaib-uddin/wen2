@@ -98,7 +98,11 @@ export default function CheckoutPage() {
 
   // Delivery options: 'standard' (Free) vs 'express' (Rs. 200)
   const [deliveryMethod, setDeliveryMethod] = useState<"standard" | "express">("standard");
-  const [paymentChoice, setPaymentChoice] = useState<"COD" | "Card">("COD");
+  const [paymentChoice, setPaymentChoice] = useState<"COD" | "RAPIDGATEWAY">("COD");
+  
+  // RapidGateway payment states
+  const [isRapidGatewayProcessing, setIsRapidGatewayProcessing] = useState(false);
+  const [rapidGatewayError, setRapidGatewayError] = useState<string | null>(null);
 
   // Error messages
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -186,6 +190,12 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Agar RapidGateway payment hai, toh alag flow hoga
+    if (paymentChoice === "RAPIDGATEWAY") {
+      await handleRapidGatewayPayment();
+      return;
+    }
+
     setIsProcessing(true);
 
     if (saveNewAddressToProfile && addAddress) {
@@ -225,6 +235,73 @@ export default function CheckoutPage() {
       console.error("Order placement failed:", err);
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  /**
+   * RapidGateway Payment Handler - Phase 2 Implementation
+   * Ye function RapidGateway ke through online payment initiate karta hai
+   */
+  const handleRapidGatewayPayment = async () => {
+    setIsRapidGatewayProcessing(true);
+    setRapidGatewayError(null);
+
+    try {
+      // Order ID generate karna (basket ID)
+      const basketId = `ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Total amount calculate karna
+      const totalAmount = subtotal + shippingCost;
+
+      console.log('[Checkout] Initiating RapidGateway payment:', {
+        basketId,
+        amount: totalAmount,
+        email,
+        phone,
+        environment: 'TEST'
+      });
+
+      // Backend API call karna
+      const response = await fetch('/api/rapidgateway/initiate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: totalAmount,
+          basketId,
+          customerEmail: email,
+          customerMobile: phone.replace(/[-\s/()]/g, ''),
+          customerName: fullName,
+          successUrl: `${window.location.origin}/order-success?order=${basketId}`,
+          failureUrl: `${window.location.origin}/checkout?payment=failed&order=${basketId}`,
+          checkoutUrl: window.location.origin,
+          description: `Order ${basketId} - Wen Hair & Skin Secret`,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to initiate payment');
+      }
+
+      console.log('[Checkout] Payment initiated, redirecting to:', result.redirectUrl);
+
+      // Customer ko RapidGateway hosted checkout page par redirect karna
+      window.location.href = result.redirectUrl;
+
+    } catch (error: any) {
+      console.error('[Checkout] RapidGateway payment error:', error.message);
+      setRapidGatewayError(error.message || 'Payment initiation failed. Please try again.');
+      triggerToast(
+        error.message || 'Payment initiation failed. Please try COD or contact support.',
+        '',
+        '',
+        'error'
+      );
+    } finally {
+      setIsRapidGatewayProcessing(false);
     }
   };
 
@@ -780,6 +857,20 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="space-y-4">
+                  {/* RapidGateway Error Display */}
+                  {rapidGatewayError && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                      <p className="font-bold mb-1">⚠️ Payment Error</p>
+                      <p>{rapidGatewayError}</p>
+                      <button 
+                        onClick={() => setRapidGatewayError(null)}
+                        className="mt-2 text-xs underline font-semibold hover:text-red-900"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Cash On Delivery */}
                     <label 
@@ -801,41 +892,95 @@ export default function CheckoutPage() {
                       </p>
                     </label>
 
-                    {/* Direct Bank Transfer */}
+                    {/* RapidGateway Online Payment */}
                     <label 
-                      onClick={() => setPaymentChoice("Card")}
-                      className={`p-[24px] border rounded-[12px] cursor-pointer transition text-left flex flex-col justify-between h-[140px] ${
-                        paymentChoice === "Card" ? "border-2 border-[#1F4D3A] bg-white text-[#1F4D3A]" : "border-[#e5e5e5] bg-white text-[#6b6b6b] hover:border-[#1F4D3A]"
+                      onClick={() => setPaymentChoice("RAPIDGATEWAY")}
+                      className={`p-[24px] border rounded-[12px] cursor-pointer transition text-left flex flex-col justify-between h-[160px] ${
+                        paymentChoice === "RAPIDGATEWAY" ? "border-2 border-[#1F4D3A] bg-gradient-to-br from-white to-[#F7F2EA] text-[#1F4D3A]" : "border-[#e5e5e5] bg-white text-[#6b6b6b] hover:border-[#1F4D3A]"
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider">Direct Bank Invoice</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">Online Payment</span>
                         <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          paymentChoice === "Card" ? "border-[#C9A227] bg-[#C9A227]" : "border-[#e5e5e5]"
+                          paymentChoice === "RAPIDGATEWAY" ? "border-[#C9A227] bg-[#C9A227]" : "border-[#e5e5e5]"
                         }`}>
-                          {paymentChoice === "Card" && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
+                          {paymentChoice === "RAPIDGATEWAY" && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
                         </div>
                       </div>
-                      <p className="text-[11px] text-[#757575] leading-normal font-light">
-                        Generate official bank transfer details for Allied, HBL, or EasyPaisa. Upload invoice screenshot later.
-                      </p>
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-[#1F4D3A] leading-normal font-semibold">
+                          💳 Cards / Wallets / Bank Transfer
+                        </p>
+                        <ul className="text-[9px] text-[#757575] leading-tight space-y-0.5">
+                          <li>• Visa / Mastercard</li>
+                          <li>• JazzCash / EasyPaisa</li>
+                          <li>• Bank Al Habib Transfer</li>
+                        </ul>
+                        <p className="text-[9px] text-emerald-600 font-bold mt-1">
+                          🔒 TEST MODE ACTIVE
+                        </p>
+                      </div>
                     </label>
                   </div>
 
-                  {paymentChoice === "Card" && (
-                    <div className="p-4.5 bg-[#F7F2EA] border border-gray-150 rounded-2xl text-xs space-y-2 text-[#1F4D3A] transition">
-                      <p className="font-bold flex items-center gap-1.5 text-[11px] uppercase tracking-wider">
-                        🏛️ Official Bank Transfer Coords:
-                      </p>
-                      <ul className="space-y-1 font-medium list-none pl-0 text-[11px] text-[#757575]">
-                        <li><strong>Bank:</strong> Allied Bank Limited (Pakistan)</li>
-                        <li><strong>Account Title:</strong> Wen Hair & Skin Secrets</li>
-                        <li><strong>Account Number:</strong> 01-2092285-01-02</li>
-                        <li><strong>IBAN Code:</strong> PK82ALBY0120922850102</li>
-                      </ul>
-                      <p className="text-[10px] text-[#757575] font-light italic leading-normal pt-1.5 border-t border-gray-150">
-                        Please email your receipt reference to help@wen.com.pk with Order ID clearly stated. Your parcel will dispatch inside 12 hours from payment approval.
-                      </p>
+                  {/* RapidGateway Payment Methods Info */}
+                  {paymentChoice === "RAPIDGATEWAY" && (
+                    <div className="p-5 bg-gradient-to-br from-[#F7F2EA] to-white border-2 border-[#C9A227]/30 rounded-2xl text-xs space-y-3 text-[#1F4D3A] transition animate-fade-in-up">
+                      <div className="flex items-center gap-2 pb-2 border-b border-[#E8E1D3]">
+                        <ShieldCheck className="w-5 h-5 text-[#C9A227]" />
+                        <p className="font-bold text-sm uppercase tracking-wider">
+                          Secure Payment Gateway - Test Mode
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <p className="font-semibold text-[11px] uppercase tracking-wide text-[#1F4D3A]">
+                          Available Payment Methods:
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-[#E8E1D3]">
+                            <span className="text-lg">💳</span>
+                            <div>
+                              <p className="font-bold text-[11px] text-[#1F4D3A]">Credit/Debit Cards</p>
+                              <p className="text-[9px] text-[#757575]">Visa, Mastercard - International & Local</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-[#E8E1D3]">
+                            <span className="text-lg">📱</span>
+                            <div>
+                              <p className="font-bold text-[11px] text-[#1F4D3A]">Mobile Wallets</p>
+                              <p className="text-[9px] text-[#757575]">JazzCash, EasyPaisa</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-[#E8E1D3]">
+                            <span className="text-lg">🏦</span>
+                            <div>
+                              <p className="font-bold text-[11px] text-[#1F4D3A]">Bank Transfer</p>
+                              <p className="text-[9px] text-[#757575]">Bank Al Habib, All Pakistani Banks</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-[#E8E1D3]">
+                            <span className="text-lg">⚡</span>
+                            <div>
+                              <p className="font-bold text-[11px] text-[#1F4D3A]">Raast Instant</p>
+                              <p className="text-[9px] text-[#757575]">Instant Bank-to-Bank Transfer</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#1F4D3A]/5 border border-[#1F4D3A]/20 rounded-xl p-3 mt-3">
+                        <p className="text-[10px] text-[#1F4D3A] leading-relaxed">
+                          <strong className="block mb-1 text-[11px] uppercase tracking-wide">🧪 Sandbox Testing Active:</strong>
+                          Ye TEST mode hai - koi real paisa deduct nahi hoga. Amount 100 PKR = Success, 200 PKR = Failed. 
+                          Jab business verify hojayega aur Merchant ID milegi, tab LIVE mode activate hoga.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2 border-t border-[#E8E1D3]">
+                        <div className="flex-1 h-1.5 bg-gradient-to-r from-[#1F4D3A] via-[#C9A227] to-[#1F4D3A] rounded-full"></div>
+                        <span className="text-[9px] font-mono text-[#757575] uppercase">PCI-DSS Compliant</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -852,18 +997,20 @@ export default function CheckoutPage() {
 
                   <button
                     onClick={handlePlaceOrder}
-                    disabled={isProcessing}
-                    className="px-[32px] py-[16px] bg-[#1F4D3A] hover:bg-[#1a4030] transition text-white font-bold text-[14px] uppercase tracking-wide rounded-[12px] cursor-pointer flex items-center justify-center shadow-md disabled:opacity-50"
+                    disabled={isProcessing || isRapidGatewayProcessing}
+                    className={`px-[32px] py-[16px] bg-[#1F4D3A] hover:bg-[#1a4030] transition text-white font-bold text-[14px] uppercase tracking-wide rounded-[12px] cursor-pointer flex items-center justify-center shadow-md disabled:opacity-50 ${
+                      paymentChoice === "RAPIDGATEWAY" && isRapidGatewayProcessing ? "animate-pulse" : ""
+                    }`}
                   >
-                    {isProcessing ? (
+                    {isProcessing || isRapidGatewayProcessing ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Processing Saffron Formulation...</span>
+                        <span>{paymentChoice === "RAPIDGATEWAY" ? "Redirecting to Payment..." : "Processing Saffron Formulation..."}</span>
                       </>
                     ) : (
                       <>
                         <ShieldCheck className="w-4.5 h-4.5 text-[#C9A227]" />
-                        <span>Place Direct Order</span>
+                        <span>{paymentChoice === "RAPIDGATEWAY" ? "Proceed to Secure Payment" : "Place Direct Order"}</span>
                       </>
                     )}
                   </button>

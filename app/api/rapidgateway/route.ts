@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rapidGatewayClient, getRapidGatewayConfigStatus } from "../../../src/lib/rapidgateway";
+import { createSupabaseServerClient } from "../../../src/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
 
 /**
  * RapidGateway Payment API Routes - Phase 2 Implementation
@@ -19,7 +21,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     
     // Required fields validate karna
-    const { amount, basketId, customerEmail, customerMobile, customerName, successUrl, failureUrl, checkoutUrl, description } = body;
+    const { amount, basketId, customerEmail, customerMobile, customerName, successUrl, failureUrl, checkoutUrl, description, paymentMethodType } = body;
     
     if (!amount || amount <= 0) {
       return NextResponse.json(
@@ -78,6 +80,33 @@ export async function POST(req: NextRequest) {
       description: description || `Order ${basketId}`,
     });
     
+    // Supabase mein order update karna with payment details (Phase 3)
+    try {
+      const supabase = await createSupabaseServerClient();
+      
+      // Order ko update karna with RapidGateway details
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          rapidgateway_basket_id: basketId,
+          payment_method: 'rapidgateway',
+          payment_status: 'pending',
+          payment_method_type: paymentMethodType || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('order_number', basketId);
+      
+      if (updateError) {
+        console.error('[Supabase] Error updating order:', updateError.message);
+        // Non-critical error, continue with response
+      } else {
+        console.log('[Supabase] Order updated successfully:', basketId);
+      }
+    } catch (supabaseError: any) {
+      console.error('[Supabase] Error connecting:', supabaseError.message);
+      // Non-critical error, continue with response
+    }
+    
     return NextResponse.json({
       success: true,
       redirectUrl: result.redirectUrl,
@@ -118,6 +147,31 @@ export async function GET(req: NextRequest) {
     
     // Payment status verify karna
     const result = await rapidGatewayClient.verifyPayment(basketId);
+    
+    // Supabase mein order update karna if payment successful (Phase 3)
+    if (result.status === 'SUCCESS' || result.status === 'COMPLETED') {
+      try {
+        const supabase = await createSupabaseServerClient();
+        
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({
+            payment_status: 'paid',
+            rapidgateway_transaction_id: result.transactionId || null,
+            payment_gateway_response: result,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('rapidgateway_basket_id', basketId);
+        
+        if (updateError) {
+          console.error('[Supabase] Error updating order:', updateError.message);
+        } else {
+          console.log('[Supabase] Order marked as paid:', basketId);
+        }
+      } catch (supabaseError: any) {
+        console.error('[Supabase] Error connecting:', supabaseError.message);
+      }
+    }
     
     return NextResponse.json({
       success: true,
