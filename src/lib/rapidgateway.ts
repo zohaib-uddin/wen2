@@ -342,7 +342,12 @@ export const rapidGatewayClient = new RapidGatewayClient();
 
 // Helper functions for easy usage
 export async function getRapidGatewayToken(): Promise<string> {
-  return rapidGatewayClient.getAccessToken();
+  try {
+    return await rapidGatewayClient.getAccessToken();
+  } catch (error: any) {
+    console.error('[getRapidGatewayToken] Error:', error.message);
+    throw error;
+  }
 }
 
 export async function processRapidGatewayTransaction(request: {
