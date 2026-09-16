@@ -132,12 +132,18 @@ class RapidGatewayClient {
     failureUrl: string;
     checkoutUrl?: string;
     description?: string;
+    paymentMethodType?: string; // 'card', 'jazzcash', 'easypaisa', 'bank'
   }): Promise<TransactionResponse> {
     try {
       // Pehle access token lena hoga
       const accessToken = await this.getAccessToken();
       
       const merchantId = this.merchantId || this.clientId;
+      
+      // Payment method type ko RapidGateway format mein convert karna
+      // Note: RapidGateway hosted checkout page par user final method select karega
+      // Ye sirf preference hint hai
+      const paymentMethodHint = request.paymentMethodType || 'card';
       
       const formData = new URLSearchParams({
         MERCHANT_ID: String(merchantId),
@@ -147,7 +153,7 @@ class RapidGatewayClient {
         CUSTOMER_MOBILE_NO: request.customerMobile.replace(/[-\s/()]/g, ''),
         CUSTOMER_EMAIL_ADDRESS: request.customerEmail,
         BASKET_ID: request.basketId,
-        TXNDESC: request.description || `Order ${request.basketId}`,
+        TXNDESC: request.description || `Order ${request.basketId} - ${paymentMethodHint.toUpperCase()}`,
         ORDER_DATE: new Date().toISOString().split('T')[0],
         SUCCESS_URL: request.successUrl,
         FAILURE_URL: request.failureUrl,
@@ -160,6 +166,14 @@ class RapidGatewayClient {
       const endpoint = this.environment === 'TEST'
         ? `${this.apiUrl}/sandbox/process-transaction`
         : `${this.apiUrl}/rapid/process-transaction`;
+
+      console.log('[RapidGateway] Processing transaction:', {
+        endpoint,
+        amount: request.amount,
+        basketId: request.basketId,
+        paymentMethodType: paymentMethodHint,
+        environment: this.environment
+      });
 
       const response = await fetch(endpoint, {
         method: 'POST',
