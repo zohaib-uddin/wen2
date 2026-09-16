@@ -119,12 +119,15 @@ export async function POST(req: NextRequest) {
     }, { status: 200 });
     
   } catch (error: any) {
-    console.error('[RapidGateway API] Error initiating payment:', error.message);
+    console.error('[RapidGateway API] Error initiating payment:', error);
+    console.error('[RapidGateway API] Error stack:', error.stack);
+    console.error('[RapidGateway API] Error message:', error.message);
     
     return NextResponse.json(
       { 
         error: error.message || "Failed to initiate payment",
-        details: "Payment gateway error occurred"
+        details: "Payment gateway error occurred",
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       },
       { status: 500 }
     );
