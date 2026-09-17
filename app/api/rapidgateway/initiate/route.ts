@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRapidGatewayToken } from '@/lib/rapidgateway';
+import { getRapidGatewayToken } from '../../../src/lib/rapidgateway';
 
 export async function POST(req: NextRequest) {
   try {
